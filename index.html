@@ -547,7 +547,7 @@ function Calendar({ selected, onSelect }) {
 
 function Summary({ openTotal, hasCourts, isVbDay }) {
   if (!isVbDay) {
-    return <div className="summary no-games">Not a volleyball night</div>;
+    return <div className="summary not-scheduled"><span className="count">Not a volleyball night</span></div>;
   }
   if (!hasCourts) {
     return (
@@ -674,7 +674,7 @@ function App() {
       {state.status === 'ok' && (
         <>
           <Summary openTotal={state.grid.openTotal} hasCourts={state.courts.length > 0} isVbDay={isVbDay} />
-          {state.courts.length > 0 && (
+          {isVbDay && state.courts.length > 0 && (
             <>
               <ScheduleGrid grid={state.grid} courts={state.courts} />
               <Callouts grid={state.grid} />
