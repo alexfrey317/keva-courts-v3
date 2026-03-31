@@ -1,435 +1,174 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e14">
 <title>KEVA Open Courts</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+  // Apply saved theme immediately to prevent flash
+  (function(){var t=localStorage.getItem('keva-theme')||'dark';document.documentElement.setAttribute('data-theme',t);
+  document.querySelector('meta[name=theme-color]').content=t==='light'?'#f8fafc':'#0a0e14'})();
+</script>
 <style>
+  /* ============ Theme variables ============ */
+  :root, [data-theme="dark"] {
+    --bg: #0a0e14; --text: #c5cdd9; --heading: #e6ecf5; --muted: #4a5568; --dim: #3a4555; --subtle: #2a3444;
+    --panel: #111820; --panel-b: #1e2a38; --panel-hover: #1a2332;
+    --accent: #3b82f6; --accent-t: #60a5fa; --accent-bg: #0f1d2e;
+    --open-t: #4ade80; --open-bg1: #052e16; --open-bg2: #065f30; --open-b: #16a34a; --open-glow: rgba(74,222,128,0.35);
+    --booked-bg: #0c1018; --booked-t: #283040; --booked-b: #151c28;
+    --full-bg1: #1a1020; --full-bg2: #1e1228; --full-b: #2e1a3e; --full-t: #a78bba;
+    --red-bg1: #2a0a0a; --red-bg2: #301010; --red-b: #7f1d1d; --red-t: #fca5a5;
+    --cyan-t: #22d3ee; --cyan-bg1: #042f3a; --cyan-bg2: #064a52; --cyan-b: #0e7490;
+    --cyan-card1: #081520; --cyan-card2: #0a1e2e; --cyan-t2: #67e8f9; --cyan-dim: #4a7a8a;
+    --amber-t: #92400e; --amber-bg: #1a1308; --amber-b: #78350f;
+    --grid-bg: #0c1018; --grid-t: #94a3b8; --hdr-t: #64748b;
+    --row-dim-t: #2a3444; --row-dim-bg: #0a0d13; --row-dim-ct: #1e2630; --row-dim-b: #10151d;
+    --callout-bg: #0a1f12; --callout-b: #166534;
+    --mode-g-bg: #0f1d2e; --mode-g-t: #60a5fa; --mode-op-bg: #0c1a20; --mode-op-t: #22d3ee;
+    --ws-active-bg: #1a2332; --ws-active-b: #2a3a50; --ws-active-t: #94a3b8;
+    --spin-bg: #1e2a38; --spin-t: #3b82f6;
+    --theme-btn-bg: transparent; --theme-btn-t: #64748b;
+  }
+
+  [data-theme="light"] {
+    --bg: #f8fafc; --text: #475569; --heading: #0f172a; --muted: #94a3b8; --dim: #cbd5e1; --subtle: #e2e8f0;
+    --panel: #ffffff; --panel-b: #e2e8f0; --panel-hover: #f1f5f9;
+    --accent: #2563eb; --accent-t: #2563eb; --accent-bg: #eff6ff;
+    --open-t: #16a34a; --open-bg1: #f0fdf4; --open-bg2: #dcfce7; --open-b: #86efac; --open-glow: rgba(22,163,74,0.15);
+    --booked-bg: #f1f5f9; --booked-t: #cbd5e1; --booked-b: #e2e8f0;
+    --full-bg1: #faf5ff; --full-bg2: #f3e8ff; --full-b: #d8b4fe; --full-t: #7c3aed;
+    --red-bg1: #fef2f2; --red-bg2: #fee2e2; --red-b: #fca5a5; --red-t: #dc2626;
+    --cyan-t: #0891b2; --cyan-bg1: #ecfeff; --cyan-bg2: #cffafe; --cyan-b: #67e8f9;
+    --cyan-card1: #f0fdfa; --cyan-card2: #ecfeff; --cyan-t2: #0e7490; --cyan-dim: #94a3b8;
+    --amber-t: #92400e; --amber-bg: #fffbeb; --amber-b: #fcd34d;
+    --grid-bg: #f8fafc; --grid-t: #64748b; --hdr-t: #94a3b8;
+    --row-dim-t: #cbd5e1; --row-dim-bg: #f8fafc; --row-dim-ct: #e2e8f0; --row-dim-b: #f1f5f9;
+    --callout-bg: #f0fdf4; --callout-b: #86efac;
+    --mode-g-bg: #eff6ff; --mode-g-t: #2563eb; --mode-op-bg: #ecfeff; --mode-op-t: #0891b2;
+    --ws-active-bg: #f1f5f9; --ws-active-b: #cbd5e1; --ws-active-t: #475569;
+    --spin-bg: #e2e8f0; --spin-t: #2563eb;
+    --theme-btn-bg: transparent; --theme-btn-t: #94a3b8;
+  }
+
+  /* ============ Base ============ */
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   body {
-    background: #0a0e14;
-    color: #c5cdd9;
+    background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100vh; min-height: 100dvh;
     padding: 12px;
     padding-top: max(12px, env(safe-area-inset-top));
     padding-bottom: max(12px, env(safe-area-inset-bottom));
-    touch-action: manipulation;
-    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation; -webkit-text-size-adjust: 100%;
+    transition: background 0.2s, color 0.2s;
   }
 
   #root { max-width: 540px; margin: 0 auto; }
 
-  h1 {
-    text-align: center;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #e6ecf5;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
+  /* ---- Header ---- */
+  .header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 2px; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: var(--heading); letter-spacing: 1px; text-transform: uppercase; }
+  .subtitle { text-align: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
 
-  .subtitle {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #4a5568;
-    margin-bottom: 12px;
+  .theme-btn {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    background: var(--theme-btn-bg); border: 1px solid var(--panel-b); color: var(--theme-btn-t);
+    width: 36px; height: 36px; border-radius: 8px; font-size: 1.1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
   }
+  .theme-btn:active { opacity: 0.7; }
 
   /* ---- Mode toggle ---- */
-  .mode-toggle {
-    display: flex;
-    background: #111820;
-    border: 1px solid #1e2a38;
-    border-radius: 10px;
-    padding: 3px;
-    margin-bottom: 14px;
-  }
-
-  .mode-btn {
-    flex: 1;
-    padding: 10px 8px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: #4a5568;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
+  .mode-toggle { display: flex; background: var(--panel); border: 1px solid var(--panel-b); border-radius: 10px; padding: 3px; margin-bottom: 14px; }
+  .mode-btn { flex: 1; padding: 10px 8px; border: none; border-radius: 8px; background: transparent; color: var(--muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
   .mode-btn:active { opacity: 0.8; }
-  .mode-btn.active-games { background: #0f1d2e; color: #60a5fa; }
-  .mode-btn.active-op { background: #0c1a20; color: #22d3ee; }
+  .mode-btn.active-games { background: var(--mode-g-bg); color: var(--mode-g-t); }
+  .mode-btn.active-op { background: var(--mode-op-bg); color: var(--mode-op-t); }
 
   /* ---- Calendar ---- */
-  .cal {
-    margin-bottom: 16px;
-    background: #111820;
-    border: 1px solid #1e2a38;
-    border-radius: 12px;
-    padding: 12px;
-  }
+  .cal { margin-bottom: 16px; background: var(--panel); border: 1px solid var(--panel-b); border-radius: 12px; padding: 12px; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-nav button { background: none; border: 1px solid var(--panel-b); color: var(--hdr-t); width: 44px; height: 44px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .cal-nav button:hover, .cal-nav button:active { background: var(--panel-hover); color: var(--grid-t); }
+  .cal-title { font-size: 0.95rem; font-weight: 700; color: var(--heading); }
 
-  .cal-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
-  .cal-nav button {
-    background: none;
-    border: 1px solid #1e2a38;
-    color: #64748b;
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-  }
-
-  .cal-nav button:hover,
-  .cal-nav button:active { background: #1a2332; border-color: #2a3a50; color: #94a3b8; }
-
-  .cal-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #e2e8f0;
-  }
-
-  .ws-toggle {
-    display: flex;
-    gap: 2px;
-    justify-content: center;
-    margin-bottom: 8px;
-  }
-
-  .ws-btn {
-    background: transparent;
-    border: 1px solid #1e2a38;
-    color: #3a4555;
-    padding: 3px 10px;
-    border-radius: 6px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
+  .ws-toggle { display: flex; gap: 2px; justify-content: center; margin-bottom: 8px; }
+  .ws-btn { background: transparent; border: 1px solid var(--panel-b); color: var(--dim); padding: 3px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 600; cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px; }
   .ws-btn:active { opacity: 0.7; }
-  .ws-btn.active { background: #1a2332; border-color: #2a3a50; color: #94a3b8; }
+  .ws-btn.active { background: var(--ws-active-bg); border-color: var(--ws-active-b); color: var(--ws-active-t); }
 
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-  }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-dow { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--dim); text-transform: uppercase; padding: 6px 0; }
 
-  .cal-dow {
-    text-align: center;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #3a4555;
-    text-transform: uppercase;
-    padding: 6px 0;
-  }
-
-  .cal-day {
-    position: relative;
-    text-align: center;
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 500;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s;
-    color: #3a4555;
-    border: 1.5px solid transparent;
-    min-height: 40px;
-  }
-
-  .cal-day:active { background: #1e2d40; }
+  .cal-day { position: relative; text-align: center; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: var(--dim); border: 1.5px solid transparent; min-height: 40px; }
+  .cal-day:active { background: var(--panel-hover); }
   .cal-day.empty { cursor: default; }
   .cal-day.empty:active { background: none; }
-
-  .cal-day.vb-day {
-    color: #64748b;
-    font-weight: 600;
-  }
-
-  .cal-day.today {
-    border-color: #2a3a50;
-  }
-
-  .cal-day.selected {
-    background: #0f1d2e;
-    border-color: #3b82f6;
-    color: #60a5fa;
-    font-weight: 700;
-  }
-
+  .cal-day.vb-day { color: var(--hdr-t); font-weight: 600; }
+  .cal-day.today { border-color: var(--ws-active-b); }
+  .cal-day.selected { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-t); font-weight: 700; }
   .cal-day.past { opacity: 0.4; }
   .cal-day.overflow { opacity: 0.35; font-size: 0.75rem; }
 
-  .op-dot {
-    position: absolute;
-    bottom: 3px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 5px;
-    height: 5px;
-    background: #22d3ee;
-    border-radius: 50%;
-    box-shadow: 0 0 4px #22d3ee;
-  }
+  .cal-dot { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; }
+  .cal-dot.green { background: var(--open-t); box-shadow: 0 0 4px var(--open-t); }
+  .cal-dot.cyan { background: var(--cyan-t); box-shadow: 0 0 4px var(--cyan-t); }
 
   /* ---- Date header ---- */
-  .date-display {
-    text-align: center;
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #e2e8f0;
-    margin-bottom: 10px;
-  }
+  .date-display { text-align: center; font-size: 1.15rem; font-weight: 600; color: var(--heading); margin-bottom: 10px; }
 
   /* ---- Summary banner ---- */
-  .summary {
-    text-align: center;
-    padding: 16px 14px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-    line-height: 1.4;
-  }
-
-  .summary .count {
-    font-size: 2.2rem;
-    font-weight: 800;
-    display: block;
-    line-height: 1.1;
-  }
-
+  .summary { text-align: center; padding: 16px 14px; border-radius: 12px; margin-bottom: 14px; line-height: 1.4; }
+  .summary .count { font-size: 2.2rem; font-weight: 800; display: block; line-height: 1.1; }
   .summary .label { font-size: 0.95rem; }
-
-  .summary.has-open {
-    background: linear-gradient(135deg, #052e16, #064e26);
-    border: 1px solid #166534;
-    color: #4ade80;
-  }
-
-  .summary.fully-booked {
-    background: linear-gradient(135deg, #1a1020, #1e1228);
-    border: 1px solid #2e1a3e;
-    color: #a78bba;
-  }
-
-  .summary.no-games {
-    background: #111820;
-    border: 1px solid #1e2a38;
-    color: #4a5568;
-  }
-
-  .summary.not-scheduled {
-    background: linear-gradient(135deg, #2a0a0a, #301010);
-    border: 1px solid #7f1d1d;
-    color: #fca5a5;
-  }
-
-  .summary.has-op {
-    background: linear-gradient(135deg, #042f3a, #064a52);
-    border: 1px solid #0e7490;
-    color: #22d3ee;
-  }
-
-  .summary.no-op {
-    background: #111820;
-    border: 1px solid #1e2a38;
-    color: #4a5568;
-  }
+  .summary.has-open { background: linear-gradient(135deg, var(--open-bg1), var(--open-bg2)); border: 1px solid var(--open-b); color: var(--open-t); }
+  .summary.fully-booked { background: linear-gradient(135deg, var(--full-bg1), var(--full-bg2)); border: 1px solid var(--full-b); color: var(--full-t); }
+  .summary.no-games { background: var(--panel); border: 1px solid var(--panel-b); color: var(--muted); }
+  .summary.not-scheduled { background: linear-gradient(135deg, var(--red-bg1), var(--red-bg2)); border: 1px solid var(--red-b); color: var(--red-t); }
+  .summary.has-op { background: linear-gradient(135deg, var(--cyan-bg1), var(--cyan-bg2)); border: 1px solid var(--cyan-b); color: var(--cyan-t); }
+  .summary.no-op { background: var(--panel); border: 1px solid var(--panel-b); color: var(--muted); }
 
   /* ---- Schedule grid ---- */
-  .grid {
-    display: grid;
-    gap: 2px;
-  }
+  .grid { display: grid; gap: 2px; }
+  .g-hdr { background: var(--panel); padding: 10px 2px; text-align: center; font-weight: 700; font-size: 0.7rem; color: var(--hdr-t); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2; }
+  .g-time { padding: 14px 4px; font-size: 0.82rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--grid-t); display: flex; align-items: center; justify-content: center; background: var(--grid-bg); white-space: nowrap; }
+  .g-cell { padding: 14px 4px; text-align: center; font-size: 0.82rem; font-weight: 700; transition: all 0.15s; }
+  .g-cell.open { background: linear-gradient(135deg, var(--open-bg1), var(--open-bg2)); color: var(--open-t); text-shadow: 0 0 10px var(--open-glow); border: 1px solid var(--open-b); border-radius: 4px; }
+  .g-cell.booked { background: var(--booked-bg); color: var(--booked-t); border: 1px solid var(--booked-b); border-radius: 4px; }
+  .row-full .g-time { color: var(--row-dim-t); }
+  .row-full .g-cell.booked { background: var(--row-dim-bg); color: var(--row-dim-ct); border-color: var(--row-dim-b); }
 
-  .g-hdr {
-    background: #111820;
-    padding: 10px 2px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 0.7rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    line-height: 1.2;
-  }
-
-  .g-time {
-    padding: 14px 4px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #0c1018;
-    white-space: nowrap;
-  }
-
-  .g-cell {
-    padding: 14px 4px;
-    text-align: center;
-    font-size: 0.82rem;
-    font-weight: 700;
-    transition: all 0.15s;
-  }
-
-  .g-cell.open {
-    background: linear-gradient(135deg, #052e16, #065f30);
-    color: #4ade80;
-    text-shadow: 0 0 10px rgba(74,222,128,0.35);
-    border: 1px solid #16a34a;
-    border-radius: 4px;
-  }
-
-  .g-cell.booked {
-    background: #0c1018;
-    color: #283040;
-    border: 1px solid #151c28;
-    border-radius: 4px;
-  }
-
-  /* Dim fully-booked rows */
-  .row-full .g-time { color: #2a3444; }
-  .row-full .g-cell.booked {
-    background: #0a0d13;
-    color: #1e2630;
-    border-color: #10151d;
-  }
-
-  /* ---- Open-slot call-outs ---- */
-  .callouts {
-    margin-top: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .callout {
-    background: #0a1f12;
-    border: 1px solid #166534;
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 0.9rem;
-    color: #4ade80;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .callout .dot {
-    width: 8px; height: 8px;
-    background: #4ade80;
-    border-radius: 50%;
-    box-shadow: 0 0 6px #4ade80;
-    flex-shrink: 0;
-  }
+  /* ---- Call-outs ---- */
+  .callouts { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .callout { background: var(--callout-bg); border: 1px solid var(--callout-b); border-radius: 10px; padding: 12px 14px; font-size: 0.9rem; color: var(--open-t); display: flex; align-items: center; gap: 10px; }
+  .callout .dot { width: 8px; height: 8px; background: var(--open-t); border-radius: 50%; box-shadow: 0 0 6px var(--open-t); flex-shrink: 0; }
 
   /* ---- Open play cards ---- */
-  .op-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .op-card {
-    background: linear-gradient(135deg, #081520, #0a1e2e);
-    border: 1px solid #0e7490;
-    border-radius: 12px;
-    padding: 14px 16px;
-  }
-
-  .op-card .op-name {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #22d3ee;
-    margin-bottom: 6px;
-  }
-
-  .op-card .op-time {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #67e8f9;
-    margin-bottom: 2px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .op-card .op-court {
-    font-size: 0.8rem;
-    color: #4a7a8a;
-  }
+  .op-list { display: flex; flex-direction: column; gap: 8px; }
+  .op-card { background: linear-gradient(135deg, var(--cyan-card1), var(--cyan-card2)); border: 1px solid var(--cyan-b); border-radius: 12px; padding: 14px 16px; }
+  .op-card .op-name { font-size: 0.95rem; font-weight: 700; color: var(--cyan-t); margin-bottom: 6px; }
+  .op-card .op-time { font-size: 0.88rem; font-weight: 600; color: var(--cyan-t2); margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+  .op-card .op-court { font-size: 0.8rem; color: var(--cyan-dim); }
 
   /* ---- Info notes ---- */
-  .bb-note {
-    text-align: center;
-    font-size: 0.78rem;
-    color: #92400e;
-    background: #1a1308;
-    border: 1px solid #78350f;
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin-top: 12px;
-  }
+  .bb-note { text-align: center; font-size: 0.78rem; color: var(--amber-t); background: var(--amber-bg); border: 1px solid var(--amber-b); border-radius: 8px; padding: 8px 12px; margin-top: 12px; }
 
   /* ---- Footer / status ---- */
-  .status {
-    text-align: center;
-    font-size: 0.75rem;
-    color: #2a3444;
-    margin-top: 20px;
-    padding-bottom: 12px;
-  }
+  .status { text-align: center; font-size: 0.75rem; color: var(--subtle); margin-top: 20px; padding-bottom: 12px; }
+  .status.error { color: var(--red-t); }
 
-  .status.error { color: #f87171; }
-
-  .loading-wrap {
-    text-align: center;
-    padding: 48px 0;
-    color: #4a5568;
-    font-size: 0.9rem;
-    grid-column: 1 / -1;
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 22px; height: 22px;
-    border: 2.5px solid #1e2a38;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle;
-    margin-left: 8px;
-  }
-
+  .loading-wrap { text-align: center; padding: 48px 0; color: var(--muted); font-size: 0.9rem; grid-column: 1 / -1; }
+  .spinner { display: inline-block; width: 22px; height: 22px; border: 2.5px solid var(--spin-bg); border-top-color: var(--spin-t); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-left: 8px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ---- Small phones (iPhone SE, etc.) ---- */
+  /* ---- Small phones ---- */
   @media (max-width: 374px) {
     body { padding: 8px; }
     h1 { font-size: 1.15rem; }
@@ -441,9 +180,8 @@
     .callout { font-size: 0.82rem; padding: 10px 12px; }
     .summary .count { font-size: 1.8rem; }
     .mode-btn { font-size: 0.8rem; padding: 8px 4px; }
+    .theme-btn { width: 32px; height: 32px; font-size: 1rem; }
   }
-
-  /* ---- Comfortable phones (375-430px) ---- */
   @media (min-width: 375px) and (max-width: 430px) {
     .g-hdr { font-size: 0.68rem; }
   }
@@ -453,7 +191,7 @@
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
 /* ===========================================================
    Config
@@ -463,28 +201,19 @@ const COMPANY = 'keva';
 const VB_RES = [3, 4, 5];
 const WKDAY_SLOTS = ['18:00','18:50','19:40','20:30','21:20','22:10'];
 const SUN_SLOTS   = ['15:00','15:50','16:40','17:30','18:20','19:10','20:00','20:50','21:40'];
-const VB_DAYS = new Set([0, 2, 3, 4]); // Sun, Tue, Wed, Thu
-const DAY  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const VB_DAYS = new Set([0, 2, 3, 4]);
 const DAYF = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MON  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DOW_LETTERS = ['S','M','T','W','T','F','S'];
 
-// Week start: 0=Sunday, 1=Monday, 6=Saturday
 const WEEK_START_OPTIONS = [
-  { value: 0, label: 'Sun' },
-  { value: 1, label: 'Mon' },
-  { value: 6, label: 'Sat' },
+  { value: 0, label: 'Sun' }, { value: 1, label: 'Mon' }, { value: 6, label: 'Sat' },
 ];
-const STORED_WS_KEY = 'keva-week-start';
-function loadWeekStart() {
-  try { const v = localStorage.getItem(STORED_WS_KEY); return v !== null ? Number(v) : 0; } catch { return 0; }
-}
-function saveWeekStart(v) {
-  try { localStorage.setItem(STORED_WS_KEY, v); } catch {}
-}
+function loadPref(k, def) { try { const v = localStorage.getItem(k); return v !== null ? v : def; } catch { return def; } }
+function savePref(k, v) { try { localStorage.setItem(k, v); } catch {} }
 
 /* ===========================================================
-   Data layer — League Games (DaySmart JSON:API)
+   Data layer — League Games
    =========================================================== */
 async function fetchGames(dateStr) {
   const u = new URL(API_BASE + '/events');
@@ -508,17 +237,22 @@ function parseGames(raw) {
     })
     .map(e => {
       const a = e.attributes;
-      return {
-        res: a.resource_id,
-        area: a.resource_area_id || 0,
-        start: a.start.slice(11, 16),
-        end: a.end.slice(11, 16),
-      };
+      return { res: a.resource_id, area: a.resource_area_id || 0, start: a.start.slice(11, 16), end: a.end.slice(11, 16) };
     });
 }
 
+async function fetchDayOpenCount(dateStr) {
+  const raw = await fetchGames(dateStr);
+  const games = parseGames(raw);
+  const courts = discoverCourts(games);
+  if (!courts.length) return -1; // no VB courts = not scheduled
+  const dow = new Date(dateStr + 'T12:00:00').getDay();
+  const grid = buildGrid(games, courts, dow === 0 ? SUN_SLOTS : WKDAY_SLOTS);
+  return grid.openTotal;
+}
+
 /* ===========================================================
-   Data layer — Open Play (event type 14, VB only)
+   Data layer — Open Play
    =========================================================== */
 async function fetchAllOpenPlay() {
   const all = [];
@@ -538,18 +272,10 @@ async function fetchAllOpenPlay() {
     if ((meta['current-page'] || 1) >= (meta['last-page'] || 1)) break;
     page++;
   }
-  return all
-    .filter(e => /vb|volleyball/i.test(e.attributes.desc || ''))
-    .map(e => {
-      const a = e.attributes;
-      return {
-        date: a.start.slice(0, 10),
-        start: a.start.slice(11, 16),
-        end: a.end.slice(11, 16),
-        desc: a.desc,
-        res: a.resource_id,
-      };
-    });
+  return all.filter(e => /vb|volleyball/i.test(e.attributes.desc || '')).map(e => {
+    const a = e.attributes;
+    return { date: a.start.slice(0, 10), start: a.start.slice(11, 16), end: a.end.slice(11, 16), desc: a.desc, res: a.resource_id };
+  });
 }
 
 /* ===========================================================
@@ -563,23 +289,12 @@ function courtName(res, area) {
   if (res === 3) return 'Court 3';
   return 'Court ?';
 }
-
-function simpleCourtName(res) {
-  if (res === 5) return 'Court 1';
-  if (res === 4) return 'Court 2';
-  if (res === 3) return 'Court 3';
-  return 'Court ?';
-}
+function simpleCourtName(res) { return res === 5 ? 'Court 1' : res === 4 ? 'Court 2' : res === 3 ? 'Court 3' : 'Court ?'; }
 
 function discoverCourts(games) {
   const m = new Map();
-  for (const g of games) {
-    const k = g.res + '-' + g.area;
-    if (!m.has(k)) m.set(k, { res: g.res, area: g.area, key: k });
-  }
-  const list = [...m.values()].sort((a, b) =>
-    a.res !== b.res ? b.res - a.res : a.area - b.area
-  );
+  for (const g of games) { const k = g.res+'-'+g.area; if (!m.has(k)) m.set(k, { res: g.res, area: g.area, key: k }); }
+  const list = [...m.values()].sort((a, b) => a.res !== b.res ? b.res - a.res : a.area - b.area);
   for (const c of list) c.name = courtName(c.res, c.area);
   return list;
 }
@@ -587,15 +302,11 @@ function discoverCourts(games) {
 function mins(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
 
 function buildGrid(games, courts, slots) {
-  const rows = [];
-  let openTotal = 0;
+  const rows = []; let openTotal = 0;
   for (const s of slots) {
     const sm = mins(s);
     const cells = courts.map(c => {
-      const booked = games.some(g =>
-        g.res === c.res && g.area === c.area &&
-        mins(g.start) <= sm && sm < mins(g.end)
-      );
+      const booked = games.some(g => g.res === c.res && g.area === c.area && mins(g.start) <= sm && sm < mins(g.end));
       if (!booked) openTotal++;
       return { court: c.name, booked };
     });
@@ -608,54 +319,31 @@ function buildGrid(games, courts, slots) {
    Date helpers
    =========================================================== */
 function ds(d) { return d.toISOString().slice(0, 10); }
-
-function fmt12(t) {
-  const [h, m] = t.split(':').map(Number);
-  return (h > 12 ? h - 12 : h) + ':' + String(m).padStart(2, '0') + (h >= 12 ? 'p' : 'a');
-}
+function fmt12(t) { const [h, m] = t.split(':').map(Number); return (h > 12 ? h - 12 : h) + ':' + String(m).padStart(2, '0') + (h >= 12 ? 'p' : 'a'); }
 
 function getDefaultDate() {
   const t = new Date();
   if (VB_DAYS.has(t.getDay())) return ds(t);
-  for (let i = 1; i <= 7; i++) {
-    const n = new Date(t); n.setDate(t.getDate() + i);
-    if (VB_DAYS.has(n.getDay())) return ds(n);
-  }
+  for (let i = 1; i <= 7; i++) { const n = new Date(t); n.setDate(t.getDate() + i); if (VB_DAYS.has(n.getDay())) return ds(n); }
   return ds(t);
 }
 
 function calendarDays(year, month, weekStart) {
   const today = ds(new Date());
-  function makeCell(dt, overflow) {
-    const str = ds(dt);
-    return {
-      day: dt.getDate(), str, overflow,
-      isVb: VB_DAYS.has(dt.getDay()),
-      isToday: str === today,
-      isPast: str < today,
-    };
-  }
+  function mc(dt, ov) { const str = ds(dt); return { day: dt.getDate(), str, overflow: ov, isVb: VB_DAYS.has(dt.getDay()), isToday: str === today, isPast: str < today }; }
   const first = new Date(year, month, 1);
-  const startDow = (first.getDay() - weekStart + 7) % 7;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const sd = (first.getDay() - weekStart + 7) % 7;
+  const dim = new Date(year, month + 1, 0).getDate();
   const cells = [];
-  for (let i = startDow - 1; i >= 0; i--) cells.push(makeCell(new Date(year, month, -i), true));
-  for (let d = 1; d <= daysInMonth; d++) cells.push(makeCell(new Date(year, month, d), false));
+  for (let i = sd - 1; i >= 0; i--) cells.push(mc(new Date(year, month, -i), true));
+  for (let d = 1; d <= dim; d++) cells.push(mc(new Date(year, month, d), false));
   const rem = cells.length % 7;
-  if (rem > 0) for (let d = 1; d <= 7 - rem; d++) cells.push(makeCell(new Date(year, month + 1, d), true));
+  if (rem > 0) for (let d = 1; d <= 7 - rem; d++) cells.push(mc(new Date(year, month + 1, d), true));
   return cells;
 }
 
-function dowHeaders(weekStart) {
-  const h = [];
-  for (let i = 0; i < 7; i++) h.push(DOW_LETTERS[(weekStart + i) % 7]);
-  return h;
-}
-
-function formatDate(str) {
-  const d = new Date(str + 'T12:00:00');
-  return DAYF[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate();
-}
+function dowHeaders(ws) { const h = []; for (let i = 0; i < 7; i++) h.push(DOW_LETTERS[(ws + i) % 7]); return h; }
+function formatDate(str) { const d = new Date(str + 'T12:00:00'); return DAYF[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate(); }
 
 /* ===========================================================
    Components
@@ -663,31 +351,18 @@ function formatDate(str) {
 function ModeToggle({ mode, onChange }) {
   return (
     <div className="mode-toggle">
-      <button
-        className={'mode-btn' + (mode === 'games' ? ' active-games' : '')}
-        onClick={() => onChange('games')}>League Games</button>
-      <button
-        className={'mode-btn' + (mode === 'openplay' ? ' active-op' : '')}
-        onClick={() => onChange('openplay')}>Open Play</button>
+      <button className={'mode-btn' + (mode === 'games' ? ' active-games' : '')} onClick={() => onChange('games')}>League Games</button>
+      <button className={'mode-btn' + (mode === 'openplay' ? ' active-op' : '')} onClick={() => onChange('openplay')}>Open Play</button>
     </div>
   );
 }
 
-function Calendar({ selected, onSelect, opDates, weekStart, onWeekStartChange }) {
-  const selDate = new Date(selected + 'T12:00:00');
-  const [viewYear, setViewYear] = useState(selDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selDate.getMonth());
+function Calendar({ selected, onSelect, dotDates, dotColor, weekStart, onWeekStartChange, viewYear, viewMonth, onViewChange }) {
   const cells = useMemo(() => calendarDays(viewYear, viewMonth, weekStart), [viewYear, viewMonth, weekStart]);
   const headers = useMemo(() => dowHeaders(weekStart), [weekStart]);
 
-  function prev() {
-    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
-    else setViewMonth(m => m - 1);
-  }
-  function next() {
-    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
-    else setViewMonth(m => m + 1);
-  }
+  function prev() { onViewChange(viewMonth === 0 ? viewYear - 1 : viewYear, viewMonth === 0 ? 11 : viewMonth - 1); }
+  function next() { onViewChange(viewMonth === 11 ? viewYear + 1 : viewYear, viewMonth === 11 ? 0 : viewMonth + 1); }
 
   return (
     <div className="cal">
@@ -698,15 +373,11 @@ function Calendar({ selected, onSelect, opDates, weekStart, onWeekStartChange })
       </div>
       <div className="ws-toggle">
         {WEEK_START_OPTIONS.map(o => (
-          <button key={o.value}
-            className={'ws-btn' + (weekStart === o.value ? ' active' : '')}
-            onClick={() => onWeekStartChange(o.value)}>
-            {o.label}
-          </button>
+          <button key={o.value} className={'ws-btn' + (weekStart === o.value ? ' active' : '')} onClick={() => onWeekStartChange(o.value)}>{o.label}</button>
         ))}
       </div>
       <div className="cal-grid">
-        {headers.map((d,i) => <div key={i} className="cal-dow">{d}</div>)}
+        {headers.map((d, i) => <div key={i} className="cal-dow">{d}</div>)}
         {cells.map((c, i) => {
           let cls = 'cal-day';
           if (c.overflow) cls += ' overflow';
@@ -714,11 +385,11 @@ function Calendar({ selected, onSelect, opDates, weekStart, onWeekStartChange })
           if (c.isToday) cls += ' today';
           if (c.isPast) cls += ' past';
           if (c.str === selected) cls += ' selected';
-          const hasOp = opDates && opDates.has(c.str);
+          const hasDot = dotDates && dotDates.has(c.str);
           return (
-            <div key={c.str+i} className={cls} onClick={() => onSelect(c.str)}>
+            <div key={c.str + i} className={cls} onClick={() => onSelect(c.str)}>
               {c.day}
-              {hasOp && <span className="op-dot" />}
+              {hasDot && <span className={'cal-dot ' + dotColor} />}
             </div>
           );
         })}
@@ -728,33 +399,16 @@ function Calendar({ selected, onSelect, opDates, weekStart, onWeekStartChange })
 }
 
 function Summary({ openTotal, hasCourts, isVbDay }) {
-  if (!isVbDay) {
-    return <div className="summary not-scheduled"><span className="count">Not a volleyball night</span></div>;
-  }
-  if (!hasCourts) {
-    return (
-      <div className="summary not-scheduled">
-        <span className="count">Not yet scheduled</span>
-        <span className="label">Games haven't been posted for this date</span>
-      </div>
-    );
-  }
-  if (openTotal === 0) {
-    return <div className="summary fully-booked"><span className="count">Fully booked</span></div>;
-  }
-  return (
-    <div className="summary has-open">
-      <span className="count">{openTotal}</span>
-      <span className="label">open slot{openTotal !== 1 ? 's' : ''}</span>
-    </div>
-  );
+  if (!isVbDay) return <div className="summary not-scheduled"><span className="count">Not a volleyball night</span></div>;
+  if (!hasCourts) return <div className="summary not-scheduled"><span className="count">Not yet scheduled</span><span className="label">Games haven't been posted for this date</span></div>;
+  if (openTotal === 0) return <div className="summary fully-booked"><span className="count">Fully booked</span></div>;
+  return <div className="summary has-open"><span className="count">{openTotal}</span><span className="label">open slot{openTotal !== 1 ? 's' : ''}</span></div>;
 }
 
 function ScheduleGrid({ grid, courts }) {
   if (!courts.length) return null;
-  const cols = 'minmax(52px, 64px) repeat(' + courts.length + ', 1fr)';
   return (
-    <div className="grid" style={{ gridTemplateColumns: cols }}>
+    <div className="grid" style={{ gridTemplateColumns: 'minmax(52px, 64px) repeat(' + courts.length + ', 1fr)' }}>
       <div className="g-hdr" />
       {courts.map(c => <div key={c.key} className="g-hdr">{c.name}</div>)}
       {grid.rows.map(row => {
@@ -762,11 +416,7 @@ function ScheduleGrid({ grid, courts }) {
         return (
           <React.Fragment key={row.time}>
             <div className={'g-time' + rc}>{fmt12(row.time)}</div>
-            {row.cells.map((cell, i) => (
-              <div key={i} className={'g-cell ' + (cell.booked ? 'booked' : 'open') + rc}>
-                {cell.booked ? '\u2014' : 'OPEN'}
-              </div>
-            ))}
+            {row.cells.map((cell, i) => <div key={i} className={'g-cell ' + (cell.booked ? 'booked' : 'open') + rc}>{cell.booked ? '\u2014' : 'OPEN'}</div>)}
           </React.Fragment>
         );
       })}
@@ -776,50 +426,25 @@ function ScheduleGrid({ grid, courts }) {
 
 function Callouts({ grid }) {
   const open = [];
-  for (const r of grid.rows) {
-    for (const c of r.cells) {
-      if (!c.booked) open.push(c.court + ' at ' + fmt12(r.time));
-    }
-  }
+  for (const r of grid.rows) for (const c of r.cells) if (!c.booked) open.push(c.court + ' at ' + fmt12(r.time));
   if (!open.length || open.length > 8) return null;
-  return (
-    <div className="callouts">
-      {open.map((t, i) => (
-        <div key={i} className="callout"><span className="dot" />{t}</div>
-      ))}
-    </div>
-  );
+  return <div className="callouts">{open.map((t, i) => <div key={i} className="callout"><span className="dot" />{t}</div>)}</div>;
 }
 
 function OpenPlayView({ sessions }) {
-  if (!sessions.length) {
-    return <div className="summary no-op">No open play scheduled for this date</div>;
-  }
+  if (!sessions.length) return <div className="summary no-op">No open play scheduled for this date</div>;
   return (
     <>
-      <div className="summary has-op">
-        <span className="count">{sessions.length}</span>
-        <span className="label">open play session{sessions.length !== 1 ? 's' : ''}</span>
-      </div>
-      <div className="op-list">
-        {sessions.map((s, i) => (
-          <div key={i} className="op-card">
-            <div className="op-name">{s.desc}</div>
-            <div className="op-time">{fmt12(s.start)} &ndash; {fmt12(s.end)}</div>
-            <div className="op-court">{simpleCourtName(s.res)}</div>
-          </div>
-        ))}
-      </div>
+      <div className="summary has-op"><span className="count">{sessions.length}</span><span className="label">open play session{sessions.length !== 1 ? 's' : ''}</span></div>
+      <div className="op-list">{sessions.map((s, i) => (
+        <div key={i} className="op-card"><div className="op-name">{s.desc}</div><div className="op-time">{fmt12(s.start)} &ndash; {fmt12(s.end)}</div><div className="op-court">{simpleCourtName(s.res)}</div></div>
+      ))}</div>
     </>
   );
 }
 
 function Loading() {
-  return (
-    <div className="grid" style={{ gridTemplateColumns: '1fr' }}>
-      <div className="loading-wrap">Loading<span className="spinner" /></div>
-    </div>
-  );
+  return <div className="grid" style={{ gridTemplateColumns: '1fr' }}><div className="loading-wrap">Loading<span className="spinner" /></div></div>;
 }
 
 /* ===========================================================
@@ -828,82 +453,111 @@ function Loading() {
 function App() {
   const [dateStr, setDateStr] = useState(getDefaultDate);
   const [mode, setMode] = useState('games');
-  const [weekStart, setWeekStart] = useState(loadWeekStart);
+  const [weekStart, setWeekStart] = useState(() => Number(loadPref('keva-week-start', '0')));
+  const [theme, setTheme] = useState(() => loadPref('keva-theme', 'dark'));
   const [gameState, setGameState] = useState({ status: 'loading' });
 
-  function handleWeekStartChange(v) { setWeekStart(v); saveWeekStart(v); }
+  // Calendar view (lifted from Calendar)
+  const initD = new Date(getDefaultDate() + 'T12:00:00');
+  const [calYear, setCalYear] = useState(initD.getFullYear());
+  const [calMonth, setCalMonth] = useState(initD.getMonth());
+  const handleViewChange = useCallback((y, m) => { setCalYear(y); setCalMonth(m); }, []);
 
-  // Open play: fetched once, cached
-  const [opSessions, setOpSessions] = useState(null); // null = not loaded
+  function handleWeekStartChange(v) { setWeekStart(v); savePref('keva-week-start', v); }
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    savePref('keva-theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    document.querySelector('meta[name=theme-color]').content = next === 'light' ? '#f8fafc' : '#0a0e14';
+  }
+
+  // -- Open play (fetched once) --
+  const [opSessions, setOpSessions] = useState(null);
   const [opLoading, setOpLoading] = useState(false);
   const [opError, setOpError] = useState(null);
   const opFetched = useRef(false);
 
-  const selectedDow = new Date(dateStr + 'T12:00:00').getDay();
-  const isVbDay = VB_DAYS.has(selectedDow);
-  const slots = selectedDow === 0 ? SUN_SLOTS : WKDAY_SLOTS;
-
-  // Fetch open play data once (on first switch to open play, or eagerly)
   useEffect(() => {
     if (opFetched.current) return;
     opFetched.current = true;
     setOpLoading(true);
     fetchAllOpenPlay()
-      .then(sessions => { setOpSessions(sessions); setOpLoading(false); })
-      .catch(err => { console.error(err); setOpError(err.message); setOpLoading(false); });
+      .then(s => { setOpSessions(s); setOpLoading(false); })
+      .catch(e => { setOpError(e.message); setOpLoading(false); });
   }, []);
 
-  // Compute open play date set and today's sessions
-  const opDates = useMemo(() => {
-    if (!opSessions) return new Set();
-    return new Set(opSessions.map(s => s.date));
-  }, [opSessions]);
+  const opDates = useMemo(() => opSessions ? new Set(opSessions.map(s => s.date)) : new Set(), [opSessions]);
+  const todayOp = useMemo(() => opSessions ? opSessions.filter(s => s.date === dateStr) : [], [opSessions, dateStr]);
 
-  const todayOp = useMemo(() => {
-    if (!opSessions) return [];
-    return opSessions.filter(s => s.date === dateStr);
-  }, [opSessions, dateStr]);
+  // -- Game dots (batch fetch for visible VB days) --
+  const gameDotCache = useRef(new Map());
+  const [gameDots, setGameDots] = useState(new Set());
 
-  // Fetch league games per day
+  useEffect(() => {
+    const cells = calendarDays(calYear, calMonth, weekStart);
+    const vbDays = [...new Set(cells.filter(c => c.isVb && !c.isPast).map(c => c.str))];
+
+    // Show cached results immediately
+    setGameDots(new Set(vbDays.filter(d => (gameDotCache.current.get(d) || 0) > 0)));
+
+    const uncached = vbDays.filter(d => !gameDotCache.current.has(d));
+    if (!uncached.length) return;
+
+    let cancelled = false;
+    Promise.all(uncached.map(d =>
+      fetchDayOpenCount(d)
+        .then(n => { gameDotCache.current.set(d, n); })
+        .catch(() => { gameDotCache.current.set(d, -1); })
+    )).then(() => {
+      if (!cancelled) setGameDots(new Set(vbDays.filter(d => (gameDotCache.current.get(d) || 0) > 0)));
+    });
+
+    return () => { cancelled = true; };
+  }, [calYear, calMonth, weekStart]);
+
+  // -- Selected day game data --
+  const selectedDow = new Date(dateStr + 'T12:00:00').getDay();
+  const isVbDay = VB_DAYS.has(selectedDow);
+  const slots = selectedDow === 0 ? SUN_SLOTS : WKDAY_SLOTS;
+
   useEffect(() => {
     let cancelled = false;
     setGameState({ status: 'loading' });
-    fetchGames(dateStr)
-      .then(raw => {
-        if (cancelled) return;
-        const games = parseGames(raw);
-        const courts = discoverCourts(games);
-        const grid = buildGrid(games, courts, slots);
-        const ct3bb = raw.some(e =>
-          e.attributes.resource_id === 3 && !e.attributes.resource_area_id &&
-          VB_RES.includes(e.attributes.resource_id)
-        );
-        const courtKeys = new Set(courts.map(c => c.res));
-        const missing = [];
-        if (!courtKeys.has(5)) missing.push('Court 1');
-        if (!courtKeys.has(4)) missing.push('Court 2');
-        if (!courts.some(c => c.res === 3)) missing.push('Court 3');
-        setGameState({
-          status: 'ok', courts, grid, ct3bb, missing,
-          updatedAt: new Date().toLocaleTimeString(),
-        });
-      })
-      .catch(err => {
-        if (cancelled) return;
-        console.error(err);
-        setGameState({ status: 'error', message: err.message });
-      });
+    fetchGames(dateStr).then(raw => {
+      if (cancelled) return;
+      const games = parseGames(raw);
+      const courts = discoverCourts(games);
+      const grid = buildGrid(games, courts, slots);
+      const ct3bb = raw.some(e => e.attributes.resource_id === 3 && !e.attributes.resource_area_id && VB_RES.includes(e.attributes.resource_id));
+      const ck = new Set(courts.map(c => c.res));
+      const missing = [];
+      if (!ck.has(5)) missing.push('Court 1');
+      if (!ck.has(4)) missing.push('Court 2');
+      if (!courts.some(c => c.res === 3)) missing.push('Court 3');
+      setGameState({ status: 'ok', courts, grid, ct3bb, missing, updatedAt: new Date().toLocaleTimeString() });
+    }).catch(err => {
+      if (cancelled) return;
+      setGameState({ status: 'error', message: err.message });
+    });
     return () => { cancelled = true; };
   }, [dateStr]);
 
+  const dotDates = mode === 'openplay' ? opDates : gameDots;
+  const dotColor = mode === 'openplay' ? 'cyan' : 'green';
+
   return (
     <>
-      <h1>KEVA Open Courts</h1>
+      <div className="header">
+        <h1>KEVA Open Courts</h1>
+        <button className="theme-btn" onClick={toggleTheme} aria-label="Toggle theme">{theme === 'dark' ? '\u2600' : '\u263E'}</button>
+      </div>
       <p className="subtitle">Volleyball Court Availability</p>
 
       <ModeToggle mode={mode} onChange={setMode} />
-      <Calendar selected={dateStr} onSelect={setDateStr} opDates={mode === 'openplay' ? opDates : null}
-        weekStart={weekStart} onWeekStartChange={handleWeekStartChange} />
+      <Calendar selected={dateStr} onSelect={setDateStr} dotDates={dotDates} dotColor={dotColor}
+        weekStart={weekStart} onWeekStartChange={handleWeekStartChange}
+        viewYear={calYear} viewMonth={calMonth} onViewChange={handleViewChange} />
       <div className="date-display">{formatDate(dateStr)}</div>
 
       {mode === 'games' && (
@@ -929,10 +583,7 @@ function App() {
             </>
           )}
           {gameState.status === 'error' && (
-            <>
-              <div className="summary no-games">Failed to fetch schedule</div>
-              <div className="status error">Could not load schedule &mdash; {gameState.message}</div>
-            </>
+            <><div className="summary no-games">Failed to fetch schedule</div><div className="status error">Could not load schedule &mdash; {gameState.message}</div></>
           )}
         </>
       )}
@@ -940,12 +591,7 @@ function App() {
       {mode === 'openplay' && (
         <>
           {opLoading && <Loading />}
-          {opError && (
-            <>
-              <div className="summary no-games">Failed to fetch open play</div>
-              <div className="status error">{opError}</div>
-            </>
-          )}
+          {opError && <><div className="summary no-games">Failed to fetch open play</div><div className="status error">{opError}</div></>}
           {opSessions && <OpenPlayView sessions={todayOp} />}
           {opSessions && <div className="status">Live data &middot; {opSessions.length} sessions loaded</div>}
         </>
