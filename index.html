@@ -87,10 +87,8 @@
   .cal-day.today{border-color:var(--ws-active-b)}
   .cal-day.selected{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-t);font-weight:700}
   .cal-day.past{opacity:.4}.cal-day.overflow{opacity:.35;font-size:.75rem}
-  .cal-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%}
-  .cal-dot.green{background:var(--open-t);box-shadow:0 0 4px var(--open-t)}
-  .cal-dot.cyan{background:var(--cyan-t);box-shadow:0 0 4px var(--cyan-t)}
-  .cal-dot.purple{background:var(--my-t);box-shadow:0 0 4px var(--my-t)}
+  .cal-dots{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+  .cal-dots span{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
   .date-display{text-align:center;font-size:1.15rem;font-weight:600;color:var(--heading);margin-bottom:10px}
 
@@ -112,7 +110,7 @@
   .g-cell.open{background:linear-gradient(135deg,var(--open-bg1),var(--open-bg2));color:var(--open-t);text-shadow:0 0 10px var(--open-glow);border:1px solid var(--open-b);border-radius:4px}
   .g-cell.open-warn{background:linear-gradient(135deg,var(--warn-bg1),var(--warn-bg2));color:var(--warn-t);text-shadow:0 0 10px var(--warn-glow);border:1px solid var(--warn-b);border-radius:4px;font-size:.72rem;line-height:1.2}
   .g-cell.booked{background:var(--booked-bg);color:var(--booked-t);border:1px solid var(--booked-b);border-radius:4px}
-  .g-cell.my-game{background:linear-gradient(135deg,var(--my-bg1),var(--my-bg2));color:var(--my-t);text-shadow:0 0 10px var(--my-glow);border:1px solid var(--my-b);border-radius:4px;font-size:.72rem;line-height:1.2}
+  .g-cell.my-game{border-radius:4px;font-size:.72rem;line-height:1.2}
   .row-full .g-time{color:var(--row-dim-t)}
   .row-full .g-cell.booked{background:var(--row-dim-bg);color:var(--row-dim-ct);border-color:var(--row-dim-b)}
 
@@ -193,6 +191,17 @@ const WS_OPTS=[{value:0,label:'Sun'},{value:1,label:'Mon'},{value:6,label:'Sat'}
 
 function pref(k,d){try{const v=localStorage.getItem(k);return v!==null?v:d}catch{return d}}
 function spref(k,v){try{localStorage.setItem(k,v)}catch{}}
+
+// Team color palette: [darkText, darkBg1, darkBg2, darkBorder, lightText, lightBg1, lightBg2, lightBorder]
+const TC=[
+  ['#c4b5fd','#1a0a2e','#2d1450','#7c3aed','#6d28d9','#f5f3ff','#ede9fe','#a78bfa'],
+  ['#f9a8d4','#2e0a1a','#4a1030','#db2777','#db2777','#fdf2f8','#fce7f3','#f9a8d4'],
+  ['#fdba74','#2e1a00','#4a2a00','#ea580c','#ea580c','#fff7ed','#ffedd5','#fdba74'],
+  ['#5eead4','#042f2e','#0a4a48','#0d9488','#0d9488','#f0fdfa','#ccfbf1','#5eead4'],
+  ['#93c5fd','#0a1a2e','#102a50','#2563eb','#2563eb','#eff6ff','#dbeafe','#93c5fd'],
+  ['#fda4af','#2e0a10','#4a1020','#e11d48','#e11d48','#fff1f2','#ffe4e6','#fda4af'],
+];
+function tc(idx,theme){const c=TC[idx%TC.length];const d=theme==='dark';return{t:c[d?0:4],bg1:c[d?1:5],bg2:c[d?2:6],b:c[d?3:7]}}
 
 /* ---- API helpers ---- */
 async function apiFetch(endpoint,params={}){
@@ -309,7 +318,7 @@ function ModeToggle({mode,onChange}){return(
     <button className={'mode-btn'+(mode==='myteam'?' active-my':'')} onClick={()=>onChange('myteam')}>My Team(s)</button>
   </div>)}
 
-function Calendar({selected,onSelect,dotDates,dotColor,weekStart,onWeekStartChange,viewYear,viewMonth,onViewChange}){
+function Calendar({selected,onSelect,getDots,weekStart,onWeekStartChange,viewYear,viewMonth,onViewChange}){
   const cells=useMemo(()=>calendarDays(viewYear,viewMonth,weekStart),[viewYear,viewMonth,weekStart]);
   const hdrs=useMemo(()=>dowHdrs(weekStart),[weekStart]);
   const prev=()=>onViewChange(viewMonth===0?viewYear-1:viewYear,viewMonth===0?11:viewMonth-1);
@@ -317,8 +326,8 @@ function Calendar({selected,onSelect,dotDates,dotColor,weekStart,onWeekStartChan
   return(<div className="cal"><div className="cal-nav"><button onClick={prev}>&lsaquo;</button><span className="cal-title">{MON[viewMonth]} {viewYear}</span><button onClick={next}>&rsaquo;</button></div>
     <div className="ws-toggle">{WS_OPTS.map(o=><button key={o.value} className={'ws-btn'+(weekStart===o.value?' active':'')} onClick={()=>onWeekStartChange(o.value)}>{o.label}</button>)}</div>
     <div className="cal-grid">{hdrs.map((d,i)=><div key={i} className="cal-dow">{d}</div>)}
-    {cells.map((c,i)=>{let cls='cal-day';if(c.overflow)cls+=' overflow';if(c.isVb)cls+=' vb-day';if(c.isToday)cls+=' today';if(c.isPast)cls+=' past';if(c.str===selected)cls+=' selected';const dot=dotDates&&dotDates.has(c.str);
-      return<div key={c.str+i} className={cls} onClick={()=>onSelect(c.str)}>{c.day}{dot&&<span className={'cal-dot '+dotColor}/>}</div>})}</div></div>)}
+    {cells.map((c,i)=>{let cls='cal-day';if(c.overflow)cls+=' overflow';if(c.isVb)cls+=' vb-day';if(c.isToday)cls+=' today';if(c.isPast)cls+=' past';if(c.str===selected)cls+=' selected';const dots=getDots(c.str);
+      return<div key={c.str+i} className={cls} onClick={()=>onSelect(c.str)}>{c.day}{dots.length>0&&<div className="cal-dots">{dots.map((clr,j)=><span key={j} style={{background:clr,boxShadow:'0 0 4px '+clr}}/>)}</div>}</div>})}</div></div>)}
 
 function Summary({openTotal,hasCourts,isVbDay}){
   if(!isVbDay)return<div className="summary not-scheduled"><span className="count">Not a volleyball night</span></div>;
@@ -326,7 +335,7 @@ function Summary({openTotal,hasCourts,isVbDay}){
   if(openTotal===0)return<div className="summary fully-booked"><span className="count">Fully booked</span></div>;
   return<div className="summary has-open"><span className="count">{openTotal}</span><span className="label">open slot{openTotal!==1?'s':''}</span></div>}
 
-function ScheduleGrid({grid,courts,teamMap,hideOpen,vbStart}){
+function ScheduleGrid({grid,courts,teamMap,hideOpen,vbStart,teamColors,theme}){
   if(!courts.length)return null;
   let hasWarn=false;
   return(<>
@@ -335,7 +344,10 @@ function ScheduleGrid({grid,courts,teamMap,hideOpen,vbStart}){
     {grid.rows.map(row=>{const rc=row.allBooked?' row-full':'';const slotMin=mins(row.time);return<React.Fragment key={row.time}>
       <div className={'g-time'+rc}>{fmt12(row.time)}</div>
       {row.cells.map((cell,i)=>{
-        if(cell.myGame){const my=cell.myTid&&teamMap?.[cell.myTid]?.name;const opp=cell.oppId&&teamMap?.[cell.oppId]?.name;return<div key={i} className="g-cell my-game">{my&&<>{my}<br/></>}{opp?<>vs {opp}</>:'YOUR GAME'}</div>}
+        if(cell.myGame){const my=cell.myTid&&teamMap?.[cell.myTid]?.name;const opp=cell.oppId&&teamMap?.[cell.oppId]?.name;
+          const ci=teamColors?.get(cell.myTid);const cc=ci!==undefined?tc(ci,theme):null;
+          const st=cc?{background:`linear-gradient(135deg,${cc.bg1},${cc.bg2})`,color:cc.t,border:`1px solid ${cc.b}`,textShadow:`0 0 10px ${cc.t}33`}:{};
+          return<div key={i} className="g-cell my-game" style={st}>{my&&<>{my}<br/></>}{opp?<>vs {opp}</>:'YOUR GAME'}</div>}
         if(!cell.booked&&hideOpen)return<div key={i} className="g-cell booked">{'\u2014'}</div>;
         if(!cell.booked){const es=vbStart&&courts[i]?vbStart[courts[i].res]:-1;const netUp=es>=0&&es<=slotMin;if(!netUp)hasWarn=true;
           return<div key={i} className={'g-cell '+(netUp?'open':'open-warn')}>{netUp?'OPEN':<>OPEN<br/>net?</>}</div>}
@@ -415,12 +427,15 @@ function App(){
   const myTeamObjs=useMemo(()=>{if(!teamData)return[];return myTeams.map(id=>teamData.teamMap[id]).filter(Boolean)},[myTeams,teamData]);
   const myTeamIdSet=useMemo(()=>new Set(myTeams),[myTeams]);
 
-  const myTeamDates=useMemo(()=>{
-    if(!myTeamObjs.length||!teamData?.seasonStart)return new Set();
-    const dayNums=new Set(myTeamObjs.map(t=>parseDayFromLeague(t.leagueName)).filter(d=>d>=0));
-    if(!dayNums.size)return new Set();
-    const dates=new Set();const start=new Date(teamData.seasonStart+'T12:00:00');const end=new Date(teamData.seasonEnd+'T12:00:00');
-    const d=new Date(start);while(d<=end){if(dayNums.has(d.getDay()))dates.add(ds(d));d.setDate(d.getDate()+1)}return dates},[myTeamObjs,teamData]);
+  // Map teamId → color index
+  const teamColorMap=useMemo(()=>{const m=new Map();myTeams.forEach((id,i)=>m.set(id,i));return m},[myTeams]);
+
+  // Map dateStr → [teamId,...] for calendar multi-dots
+  const myTeamDateMap=useMemo(()=>{
+    if(!myTeamObjs.length||!teamData?.seasonStart)return new Map();
+    const map=new Map();const start=new Date(teamData.seasonStart+'T12:00:00');const end=new Date(teamData.seasonEnd+'T12:00:00');
+    for(const t of myTeamObjs){const dn=parseDayFromLeague(t.leagueName);if(dn<0)continue;const d=new Date(start);while(d<=end){if(d.getDay()===dn){const s=ds(d);if(!map.has(s))map.set(s,[]);map.get(s).push(t.id)}d.setDate(d.getDate()+1)}}
+    return map},[myTeamObjs,teamData]);
 
   // ---- Selected day game data ----
   const selectedDow=new Date(dateStr+'T12:00:00').getDay();
@@ -437,9 +452,14 @@ function App(){
       setGameState({status:'ok',courts,grid,ct3bb,missing,vbStart,updatedAt:new Date().toLocaleTimeString()})}).catch(e=>{if(!x)setGameState({status:'error',message:e.message})});
     return()=>{x=true}},[dateStr,myIds]);
 
-  // ---- Determine dots for calendar ----
-  const dotDates=mode==='openplay'?opDates:mode==='myteam'?myTeamDates:gameDots;
-  const dotColor=mode==='openplay'?'cyan':mode==='myteam'?'purple':'green';
+  // ---- Calendar dots ----
+  const getDots=useCallback((dateStr)=>{
+    if(mode==='games')return gameDots.has(dateStr)?[getComputedStyle(document.documentElement).getPropertyValue('--open-t').trim()]:[];
+    if(mode==='openplay')return opDates.has(dateStr)?[getComputedStyle(document.documentElement).getPropertyValue('--cyan-t').trim()]:[];
+    const tids=myTeamDateMap.get(dateStr);
+    if(!tids)return[];
+    return tids.map(id=>{const ci=teamColorMap.get(id);return ci!==undefined?tc(ci,theme).t:'#c4b5fd'});
+  },[mode,gameDots,opDates,myTeamDateMap,teamColorMap,theme]);
 
   // ---- My team game count for today ----
   const myGamesToday=gameState.status==='ok'?gameState.grid.rows.reduce((n,r)=>n+r.cells.filter(c=>c.myGame).length,0):0;
@@ -448,7 +468,7 @@ function App(){
     <div className="header"><h1>KEVA Open Courts</h1><button className="theme-btn" onClick={toggleTheme}>{theme==='dark'?'\u2600':'\u263E'}</button></div>
     <p className="subtitle">Volleyball Court Availability</p>
     <ModeToggle mode={mode} onChange={setMode}/>
-    <Calendar selected={dateStr} onSelect={setDateStr} dotDates={dotDates} dotColor={dotColor} weekStart={weekStart} onWeekStartChange={handleWS} viewYear={calYear} viewMonth={calMonth} onViewChange={handleView}/>
+    <Calendar selected={dateStr} onSelect={setDateStr} getDots={getDots} weekStart={weekStart} onWeekStartChange={handleWS} viewYear={calYear} viewMonth={calMonth} onViewChange={handleView}/>
     <div className="date-display">{formatDate(dateStr)}</div>
 
     {mode==='games'&&<>
@@ -475,14 +495,14 @@ function App(){
       {!myTeamObjs.length&&<div className="select-prompt"><p>Pick your teams to see your game schedule highlighted on the court grid</p>
         <button className="select-btn" onClick={()=>setShowPicker(true)} disabled={teamLoading}>{teamLoading?'Loading teams...':'Select Your Teams'}</button></div>}
       {myTeamObjs.length>0&&<>
-        <div className="team-banner"><div className="tb-info">{myTeamObjs.map((t,i)=><div key={t.id}><span className="tb-name">{t.name}</span>{' '}<span className="tb-league">{t.leagueName}</span></div>)}</div>
+        <div className="team-banner"><div className="tb-info">{myTeamObjs.map((t,i)=>{const ci=teamColorMap.get(t.id);const cc=ci!==undefined?tc(ci,theme):null;return<div key={t.id}><span className="tb-name" style={cc?{color:cc.t}:{}}>{t.name}</span>{' '}<span className="tb-league">{t.leagueName}</span></div>})}</div>
           <button className="tb-change" onClick={()=>setShowPicker(true)}>Edit</button></div>
         {gameState.status==='loading'&&<Loading/>}
         {gameState.status==='ok'&&<>
           {isVbDay&&gameState.courts.length>0?<>
             {myGamesToday>0?<div className="summary has-my"><span className="count">Game day!</span><span className="label">{myGamesToday} game{myGamesToday>1?'s':''} on this court sheet</span></div>
               :<div className="summary no-games">Your team doesn't play this day</div>}
-            <ScheduleGrid grid={gameState.grid} courts={gameState.courts} teamMap={teamData?.teamMap} hideOpen vbStart={gameState.vbStart}/>
+            <ScheduleGrid grid={gameState.grid} courts={gameState.courts} teamMap={teamData?.teamMap} hideOpen vbStart={gameState.vbStart} teamColors={teamColorMap} theme={theme}/>
           </>:<Summary openTotal={gameState.grid.openTotal} hasCourts={gameState.courts.length>0} isVbDay={isVbDay}/>}
           <div className="status">Live data &middot; updated {gameState.updatedAt}</div></>}
       </>}
