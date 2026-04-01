@@ -21,11 +21,12 @@
     --cyan-t:#22d3ee;--cyan-bg1:#042f3a;--cyan-bg2:#064a52;--cyan-b:#0e7490;
     --cyan-card1:#081520;--cyan-card2:#0a1e2e;--cyan-t2:#67e8f9;--cyan-dim:#4a7a8a;
     --amber-t:#92400e;--amber-bg:#1a1308;--amber-b:#78350f;
-    --my-bg1:#1a1400;--my-bg2:#2d2200;--my-b:#b45309;--my-t:#fbbf24;--my-glow:rgba(251,191,36,0.3);
+    --my-bg1:#1a0a2e;--my-bg2:#2d1450;--my-b:#7c3aed;--my-t:#c4b5fd;--my-glow:rgba(196,181,253,0.3);
+    --warn-bg1:#1a1400;--warn-bg2:#2d2200;--warn-b:#b45309;--warn-t:#fbbf24;--warn-glow:rgba(251,191,36,0.3);
     --grid-bg:#0c1018;--grid-t:#94a3b8;--hdr-t:#64748b;
     --row-dim-t:#2a3444;--row-dim-bg:#0a0d13;--row-dim-ct:#1e2630;--row-dim-b:#10151d;
     --callout-bg:#0a1f12;--callout-b:#166534;
-    --mode-g-bg:#0f1d2e;--mode-g-t:#60a5fa;--mode-op-bg:#0c1a20;--mode-op-t:#22d3ee;--mode-my-bg:#1a1400;--mode-my-t:#fbbf24;
+    --mode-g-bg:#0f1d2e;--mode-g-t:#60a5fa;--mode-op-bg:#0c1a20;--mode-op-t:#22d3ee;--mode-my-bg:#1a0a2e;--mode-my-t:#c4b5fd;
     --ws-active-bg:#1a2332;--ws-active-b:#2a3a50;--ws-active-t:#94a3b8;
     --spin-bg:#1e2a38;--spin-t:#3b82f6;--theme-btn-t:#64748b;
     --overlay:rgba(0,0,0,0.75);--picker-bg:#111820;
@@ -41,11 +42,12 @@
     --cyan-t:#0891b2;--cyan-bg1:#ecfeff;--cyan-bg2:#cffafe;--cyan-b:#67e8f9;
     --cyan-card1:#f0fdfa;--cyan-card2:#ecfeff;--cyan-t2:#0e7490;--cyan-dim:#94a3b8;
     --amber-t:#92400e;--amber-bg:#fffbeb;--amber-b:#fcd34d;
-    --my-bg1:#fffbeb;--my-bg2:#fef3c7;--my-b:#fcd34d;--my-t:#b45309;--my-glow:rgba(180,83,9,0.12);
+    --my-bg1:#f5f3ff;--my-bg2:#ede9fe;--my-b:#a78bfa;--my-t:#6d28d9;--my-glow:rgba(109,40,217,0.12);
+    --warn-bg1:#fffbeb;--warn-bg2:#fef3c7;--warn-b:#fcd34d;--warn-t:#b45309;--warn-glow:rgba(180,83,9,0.12);
     --grid-bg:#f8fafc;--grid-t:#64748b;--hdr-t:#94a3b8;
     --row-dim-t:#cbd5e1;--row-dim-bg:#f8fafc;--row-dim-ct:#e2e8f0;--row-dim-b:#f1f5f9;
     --callout-bg:#f0fdf4;--callout-b:#86efac;
-    --mode-g-bg:#eff6ff;--mode-g-t:#2563eb;--mode-op-bg:#ecfeff;--mode-op-t:#0891b2;--mode-my-bg:#fffbeb;--mode-my-t:#b45309;
+    --mode-g-bg:#eff6ff;--mode-g-t:#2563eb;--mode-op-bg:#ecfeff;--mode-op-t:#0891b2;--mode-my-bg:#f5f3ff;--mode-my-t:#6d28d9;
     --ws-active-bg:#f1f5f9;--ws-active-b:#cbd5e1;--ws-active-t:#475569;
     --spin-bg:#e2e8f0;--spin-t:#2563eb;--theme-btn-t:#94a3b8;
     --overlay:rgba(0,0,0,0.4);--picker-bg:#ffffff;
@@ -88,7 +90,7 @@
   .cal-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%}
   .cal-dot.green{background:var(--open-t);box-shadow:0 0 4px var(--open-t)}
   .cal-dot.cyan{background:var(--cyan-t);box-shadow:0 0 4px var(--cyan-t)}
-  .cal-dot.amber{background:var(--my-t);box-shadow:0 0 4px var(--my-t)}
+  .cal-dot.purple{background:var(--my-t);box-shadow:0 0 4px var(--my-t)}
 
   .date-display{text-align:center;font-size:1.15rem;font-weight:600;color:var(--heading);margin-bottom:10px}
 
@@ -108,7 +110,7 @@
   .g-time{padding:14px 4px;font-size:.82rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--grid-t);display:flex;align-items:center;justify-content:center;background:var(--grid-bg);white-space:nowrap}
   .g-cell{padding:14px 4px;text-align:center;font-size:.82rem;font-weight:700;transition:all .15s}
   .g-cell.open{background:linear-gradient(135deg,var(--open-bg1),var(--open-bg2));color:var(--open-t);text-shadow:0 0 10px var(--open-glow);border:1px solid var(--open-b);border-radius:4px}
-  .g-cell.open-warn{background:linear-gradient(135deg,var(--my-bg1),var(--my-bg2));color:var(--my-t);text-shadow:0 0 10px var(--my-glow);border:1px solid var(--my-b);border-radius:4px;font-size:.72rem;line-height:1.2}
+  .g-cell.open-warn{background:linear-gradient(135deg,var(--warn-bg1),var(--warn-bg2));color:var(--warn-t);text-shadow:0 0 10px var(--warn-glow);border:1px solid var(--warn-b);border-radius:4px;font-size:.72rem;line-height:1.2}
   .g-cell.booked{background:var(--booked-bg);color:var(--booked-t);border:1px solid var(--booked-b);border-radius:4px}
   .g-cell.my-game{background:linear-gradient(135deg,var(--my-bg1),var(--my-bg2));color:var(--my-t);text-shadow:0 0 10px var(--my-glow);border:1px solid var(--my-b);border-radius:4px;font-size:.72rem;line-height:1.2}
   .row-full .g-time{color:var(--row-dim-t)}
@@ -117,8 +119,8 @@
   .callouts{margin-top:14px;display:flex;flex-direction:column;gap:6px}
   .callout{background:var(--callout-bg);border:1px solid var(--callout-b);border-radius:10px;padding:12px 14px;font-size:.9rem;color:var(--open-t);display:flex;align-items:center;gap:10px}
   .callout .dot{width:8px;height:8px;background:var(--open-t);border-radius:50%;box-shadow:0 0 6px var(--open-t);flex-shrink:0}
-  .callout-warn{background:var(--my-bg1);border-color:var(--my-b);color:var(--my-t)}
-  .callout-warn .dot-warn{background:var(--my-t);box-shadow:0 0 6px var(--my-t)}
+  .callout-warn{background:var(--warn-bg1);border-color:var(--warn-b);color:var(--warn-t)}
+  .callout-warn .dot-warn{background:var(--warn-t);box-shadow:0 0 6px var(--warn-t)}
   .callout-net{font-size:.7rem;opacity:.7;margin-left:4px}
 
   .op-list{display:flex;flex-direction:column;gap:8px}
@@ -132,7 +134,7 @@
   .grid-legend span{display:flex;align-items:center;gap:4px}
   .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
   .legend-dot.green{background:var(--open-t)}
-  .legend-dot.yellow{background:var(--my-t)}
+  .legend-dot.yellow{background:var(--warn-t)}
   .legend-dot.dim{background:var(--booked-t)}
   .status{text-align:center;font-size:.75rem;color:var(--subtle);margin-top:20px;padding-bottom:12px}
   .status.error{color:var(--red-t)}
@@ -432,7 +434,7 @@ function App(){
 
   // ---- Determine dots for calendar ----
   const dotDates=mode==='openplay'?opDates:mode==='myteam'?myTeamDates:gameDots;
-  const dotColor=mode==='openplay'?'cyan':mode==='myteam'?'amber':'green';
+  const dotColor=mode==='openplay'?'cyan':mode==='myteam'?'purple':'green';
 
   // ---- My team game count for today ----
   const myGamesToday=gameState.status==='ok'?gameState.grid.rows.reduce((n,r)=>n+r.cells.filter(c=>c.myGame).length,0):0;
