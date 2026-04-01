@@ -209,17 +209,20 @@ function parseGames(raw){
 
 async function fetchAllDayEvents(d){return(await apiFetch('events',{'filter[start_date]':d,sort:'start','page[size]':'500'})).data||[]}
 
-function detectNoNetRes(allEvents,courts,isSunday){
-  // Returns Set of resource IDs that had NO VB activity before game time
-  const cutoff=isSunday?15*60:18*60;
-  const noNet=new Set();
+function computeVbStart(allEvents,courts){
+  // For each resource, find the earliest VB activity (classes, open play, or VB games)
+  const earliest={};
   const seen=new Set();
   for(const c of courts){
     if(seen.has(c.res))continue;seen.add(c.res);
-    const hasVb=allEvents.some(e=>{const a=e.attributes;if(a.resource_id!==c.res)return false;if(mins(a.start.slice(11,16))>=cutoff)return false;const d=(a.desc||'').toLowerCase();return d.includes('vb')||d.includes('volleyball')});
-    if(!hasVb)noNet.add(c.res);
+    let min=Infinity;
+    for(const e of allEvents){const a=e.attributes;if(a.resource_id!==c.res)continue;
+      const d=(a.desc||'').toLowerCase();
+      const isVb=d.includes('vb')||d.includes('volleyball')||(a.event_type_id==='g'&&VB_RES.includes(a.resource_id)&&(a.resource_id!==3||a.resource_area_id));
+      if(isVb){const t=mins(a.start.slice(11,16));if(t<min)min=t}}
+    earliest[c.res]=min===Infinity?-1:min;
   }
-  return noNet;
+  return earliest;
 }
 
 async function fetchAllOpenPlay(){
@@ -320,25 +323,26 @@ function Summary({openTotal,hasCourts,isVbDay}){
   if(openTotal===0)return<div className="summary fully-booked"><span className="count">Fully booked</span></div>;
   return<div className="summary has-open"><span className="count">{openTotal}</span><span className="label">open slot{openTotal!==1?'s':''}</span></div>}
 
-function ScheduleGrid({grid,courts,teamMap,hideOpen,noNetRes}){
+function ScheduleGrid({grid,courts,teamMap,hideOpen,vbStart}){
   if(!courts.length)return null;
-  const hasWarn=noNetRes&&noNetRes.size>0;
+  let hasWarn=false;
   return(<>
     <div className="grid" style={{gridTemplateColumns:'minmax(52px,64px) repeat('+courts.length+',1fr)'}}>
     <div className="g-hdr"/>{courts.map(c=><div key={c.key} className="g-hdr">{c.name}</div>)}
-    {grid.rows.map(row=>{const rc=row.allBooked?' row-full':'';return<React.Fragment key={row.time}>
+    {grid.rows.map(row=>{const rc=row.allBooked?' row-full':'';const slotMin=mins(row.time);return<React.Fragment key={row.time}>
       <div className={'g-time'+rc}>{fmt12(row.time)}</div>
       {row.cells.map((cell,i)=>{
         if(cell.myGame){const opp=cell.oppId&&teamMap?.[cell.oppId]?.name;return<div key={i} className="g-cell my-game">{opp?<>vs<br/>{opp}</>:'YOUR GAME'}</div>}
         if(!cell.booked&&hideOpen)return<div key={i} className="g-cell booked">{'\u2014'}</div>;
-        if(!cell.booked){const warn=noNetRes&&noNetRes.has(courts[i]?.res);return<div key={i} className={'g-cell '+(warn?'open-warn':'open')}>{warn?<>OPEN<br/>net?</>:'OPEN'}</div>}
+        if(!cell.booked){const es=vbStart&&courts[i]?vbStart[courts[i].res]:-1;const netUp=es>=0&&es<=slotMin;if(!netUp)hasWarn=true;
+          return<div key={i} className={'g-cell '+(netUp?'open':'open-warn')}>{netUp?'OPEN':<>OPEN<br/>net?</>}</div>}
         return<div key={i} className={'g-cell booked'+rc}>{'\u2014'}</div>})}
     </React.Fragment>})}</div>
     {hasWarn&&!hideOpen&&<div className="grid-legend"><span><span className="legend-dot green"/>Net likely up</span><span><span className="legend-dot yellow"/>Net uncertain</span></div>}
   </>)}
 
-function Callouts({grid,courts,noNetRes}){
-  const o=[];for(const r of grid.rows)for(let i=0;i<r.cells.length;i++){const c=r.cells[i];if(!c.booked){const warn=noNetRes&&courts[i]&&noNetRes.has(courts[i].res);o.push({text:c.court+' at '+fmt12(r.time),warn})}}
+function Callouts({grid,courts,vbStart}){
+  const o=[];for(const r of grid.rows){const sm=mins(r.time);for(let i=0;i<r.cells.length;i++){const c=r.cells[i];if(!c.booked){const es=vbStart&&courts[i]?vbStart[courts[i].res]:-1;const netUp=es>=0&&es<=sm;o.push({text:c.court+' at '+fmt12(r.time),warn:!netUp})}}}
   if(!o.length||o.length>8)return null;
   return<div className="callouts">{o.map((c,i)=><div key={i} className={'callout'+(c.warn?' callout-warn':'')}><span className={'dot'+(c.warn?' dot-warn':'')}/>{c.text}{c.warn&&<span className="callout-net">net?</span>}</div>)}</div>}
 
@@ -422,8 +426,8 @@ function App(){
       const games=parseGames(raw);const courts=discoverCourts(games);const grid=buildGrid(games,courts,slots,myIds);
       const ct3bb=raw.some(e=>e.attributes.resource_id===3&&!e.attributes.resource_area_id&&VB_RES.includes(e.attributes.resource_id));
       const ck=new Set(courts.map(c=>c.res));const missing=[];if(!ck.has(5))missing.push('Court 1');if(!ck.has(4))missing.push('Court 2');if(!courts.some(c=>c.res===3))missing.push('Court 3');
-      const noNetRes=detectNoNetRes(allEvts,courts,selectedDow===0);
-      setGameState({status:'ok',courts,grid,ct3bb,missing,noNetRes,updatedAt:new Date().toLocaleTimeString()})}).catch(e=>{if(!x)setGameState({status:'error',message:e.message})});
+      const vbStart=computeVbStart(allEvts,courts);
+      setGameState({status:'ok',courts,grid,ct3bb,missing,vbStart,updatedAt:new Date().toLocaleTimeString()})}).catch(e=>{if(!x)setGameState({status:'error',message:e.message})});
     return()=>{x=true}},[dateStr,myIds]);
 
   // ---- Determine dots for calendar ----
@@ -445,8 +449,8 @@ function App(){
       {gameState.status==='ok'&&<>
         <Summary openTotal={gameState.grid.openTotal} hasCourts={gameState.courts.length>0} isVbDay={isVbDay}/>
         {isVbDay&&gameState.courts.length>0&&<>
-          <ScheduleGrid grid={gameState.grid} courts={gameState.courts} noNetRes={gameState.noNetRes}/>
-          <Callouts grid={gameState.grid} courts={gameState.courts} noNetRes={gameState.noNetRes}/>
+          <ScheduleGrid grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart}/>
+          <Callouts grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart}/>
           {gameState.missing.length>0&&!gameState.ct3bb&&<div className="bb-note">{gameState.missing.join(', ')} not scheduled for volleyball tonight</div>}
           {gameState.ct3bb&&gameState.missing.filter(c=>c!=='Court 3').length>0&&<div className="bb-note">{gameState.missing.filter(c=>c!=='Court 3').join(', ')} not scheduled for volleyball tonight</div>}
           {gameState.ct3bb&&<div className="bb-note">Court 3 is basketball on Sundays</div>}</>}
@@ -471,7 +475,7 @@ function App(){
           {isVbDay&&gameState.courts.length>0?<>
             {myGamesToday>0?<div className="summary has-my"><span className="count">Game day!</span><span className="label">{myGamesToday} game{myGamesToday>1?'s':''} on this court sheet</span></div>
               :<div className="summary no-games">Your team doesn't play this day</div>}
-            <ScheduleGrid grid={gameState.grid} courts={gameState.courts} teamMap={teamData?.teamMap} hideOpen noNetRes={gameState.noNetRes}/>
+            <ScheduleGrid grid={gameState.grid} courts={gameState.courts} teamMap={teamData?.teamMap} hideOpen vbStart={gameState.vbStart}/>
           </>:<Summary openTotal={gameState.grid.openTotal} hasCourts={gameState.courts.length>0} isVbDay={isVbDay}/>}
           <div className="status">Live data &middot; updated {gameState.updatedAt}</div></>}
       </>}
