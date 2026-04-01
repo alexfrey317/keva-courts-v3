@@ -124,6 +124,7 @@
   .op-card .op-court{font-size:.8rem;color:var(--cyan-dim)}
 
   .bb-note{text-align:center;font-size:.78rem;color:var(--amber-t);background:var(--amber-bg);border:1px solid var(--amber-b);border-radius:8px;padding:8px 12px;margin-top:12px}
+  .net-warn{text-align:center;font-size:.78rem;color:var(--red-t);background:linear-gradient(135deg,var(--red-bg1),var(--red-bg2));border:1px solid var(--red-b);border-radius:8px;padding:8px 12px;margin-top:12px}
   .status{text-align:center;font-size:.75rem;color:var(--subtle);margin-top:20px;padding-bottom:12px}
   .status.error{color:var(--red-t)}
   .loading-wrap{text-align:center;padding:48px 0;color:var(--muted);font-size:.9rem;grid-column:1/-1}
@@ -195,6 +196,26 @@ async function fetchGames(d){return(await apiFetch('events',{'filter[start_date]
 function parseGames(raw){
   return raw.filter(e=>{const a=e.attributes;return VB_RES.includes(a.resource_id)&&!(a.resource_id===3&&!a.resource_area_id)})
     .map(e=>{const a=e.attributes;return{res:a.resource_id,area:a.resource_area_id||0,start:a.start.slice(11,16),end:a.end.slice(11,16),ht:a.hteam_id,vt:a.vteam_id}});
+}
+
+async function fetchAllDayEvents(d){return(await apiFetch('events',{'filter[start_date]':d,sort:'start','page[size]':'500'})).data||[]}
+
+function detectNetWarnings(allEvents,courts,isSunday){
+  // Check if each court had VB activity before game time
+  const cutoff=isSunday?15*60:18*60;
+  const warns=[];
+  for(const c of courts){
+    const pre=allEvents.filter(e=>{
+      const a=e.attributes;
+      if(a.resource_id!==c.res)return false;
+      const sm=mins(a.start.slice(11,16));
+      if(sm>=cutoff)return false;
+      const d=(a.desc||'').toLowerCase();
+      return d.includes('vb')||d.includes('volleyball');
+    });
+    if(!pre.length)warns.push(c.name);
+  }
+  return warns;
 }
 
 async function fetchAllOpenPlay(){
@@ -295,7 +316,7 @@ function Summary({openTotal,hasCourts,isVbDay}){
   if(openTotal===0)return<div className="summary fully-booked"><span className="count">Fully booked</span></div>;
   return<div className="summary has-open"><span className="count">{openTotal}</span><span className="label">open slot{openTotal!==1?'s':''}</span></div>}
 
-function ScheduleGrid({grid,courts,teamMap}){
+function ScheduleGrid({grid,courts,teamMap,hideOpen}){
   if(!courts.length)return null;
   return(<div className="grid" style={{gridTemplateColumns:'minmax(52px,64px) repeat('+courts.length+',1fr)'}}>
     <div className="g-hdr"/>{courts.map(c=><div key={c.key} className="g-hdr">{c.name}</div>)}
@@ -303,6 +324,7 @@ function ScheduleGrid({grid,courts,teamMap}){
       <div className={'g-time'+rc}>{fmt12(row.time)}</div>
       {row.cells.map((cell,i)=>{
         if(cell.myGame){const opp=cell.oppId&&teamMap?.[cell.oppId]?.name;return<div key={i} className="g-cell my-game">{opp?<>vs<br/>{opp}</>:'YOUR GAME'}</div>}
+        if(!cell.booked&&hideOpen)return<div key={i} className="g-cell booked">{'\u2014'}</div>;
         return<div key={i} className={'g-cell '+(cell.booked?'booked':'open')+rc}>{cell.booked?'\u2014':'OPEN'}</div>})}
     </React.Fragment>})}</div>)}
 
@@ -384,10 +406,12 @@ function App(){
   const myIds=mode==='myteam'&&myTeamIdSet.size>0?myTeamIdSet:null;
 
   useEffect(()=>{let x=false;setGameState({status:'loading'});
-    fetchGames(dateStr).then(raw=>{if(x)return;const games=parseGames(raw);const courts=discoverCourts(games);const grid=buildGrid(games,courts,slots,myIds);
+    Promise.all([fetchGames(dateStr),fetchAllDayEvents(dateStr)]).then(([raw,allEvts])=>{if(x)return;
+      const games=parseGames(raw);const courts=discoverCourts(games);const grid=buildGrid(games,courts,slots,myIds);
       const ct3bb=raw.some(e=>e.attributes.resource_id===3&&!e.attributes.resource_area_id&&VB_RES.includes(e.attributes.resource_id));
       const ck=new Set(courts.map(c=>c.res));const missing=[];if(!ck.has(5))missing.push('Court 1');if(!ck.has(4))missing.push('Court 2');if(!courts.some(c=>c.res===3))missing.push('Court 3');
-      setGameState({status:'ok',courts,grid,ct3bb,missing,updatedAt:new Date().toLocaleTimeString()})}).catch(e=>{if(!x)setGameState({status:'error',message:e.message})});
+      const noNet=detectNetWarnings(allEvts,courts,selectedDow===0);
+      setGameState({status:'ok',courts,grid,ct3bb,missing,noNet,updatedAt:new Date().toLocaleTimeString()})}).catch(e=>{if(!x)setGameState({status:'error',message:e.message})});
     return()=>{x=true}},[dateStr,myIds]);
 
   // ---- Determine dots for calendar ----
@@ -411,6 +435,7 @@ function App(){
         {isVbDay&&gameState.courts.length>0&&<>
           <ScheduleGrid grid={gameState.grid} courts={gameState.courts}/>
           <Callouts grid={gameState.grid}/>
+          {gameState.noNet&&gameState.noNet.length>0&&<div className="net-warn">{gameState.noNet.join(', ')} &mdash; no VB activity earlier today, net may not be set up</div>}
           {gameState.missing.length>0&&!gameState.ct3bb&&<div className="bb-note">{gameState.missing.join(', ')} not scheduled for volleyball tonight</div>}
           {gameState.ct3bb&&gameState.missing.filter(c=>c!=='Court 3').length>0&&<div className="bb-note">{gameState.missing.filter(c=>c!=='Court 3').join(', ')} not scheduled for volleyball tonight</div>}
           {gameState.ct3bb&&<div className="bb-note">Court 3 is basketball on Sundays</div>}</>}
@@ -435,7 +460,7 @@ function App(){
           {isVbDay&&gameState.courts.length>0?<>
             {myGamesToday>0?<div className="summary has-my"><span className="count">Game day!</span><span className="label">{myGamesToday} game{myGamesToday>1?'s':''} on this court sheet</span></div>
               :<div className="summary no-games">Your team doesn't play this day</div>}
-            <ScheduleGrid grid={gameState.grid} courts={gameState.courts} teamMap={teamData?.teamMap}/>
+            <ScheduleGrid grid={gameState.grid} courts={gameState.courts} teamMap={teamData?.teamMap} hideOpen/>
           </>:<Summary openTotal={gameState.grid.openTotal} hasCourts={gameState.courts.length>0} isVbDay={isVbDay}/>}
           <div className="status">Live data &middot; updated {gameState.updatedAt}</div></>}
       </>}
