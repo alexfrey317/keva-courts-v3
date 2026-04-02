@@ -64,10 +64,11 @@
   body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;min-height:100vh;min-height:100dvh;padding:12px;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom));touch-action:manipulation;-webkit-text-size-adjust:100%;transition:background .2s,color .2s}
   #root{max-width:540px;margin:0 auto}
 
-  .header{display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:2px}
-  h1{font-size:1.4rem;font-weight:700;color:var(--heading);letter-spacing:1px;text-transform:uppercase}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+  .hdr-spacer{width:80px;flex-shrink:0}
+  h1{font-size:1.4rem;font-weight:700;color:var(--heading);letter-spacing:1px;text-transform:uppercase;text-align:center;flex:1;min-width:0}
   .subtitle{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:12px}
-  .hdr-btns{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;gap:4px}
+  .hdr-btns{display:flex;gap:4px;flex-shrink:0}
   .icon-btn{background:0;border:1px solid var(--panel-b);color:var(--theme-btn-t);width:36px;height:36px;border-radius:8px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .icon-btn:active{opacity:.7}
   .copied{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--open-b);color:var(--open-t);padding:8px 20px;border-radius:8px;font-size:.85rem;font-weight:600;z-index:200;animation:fadeout 2s forwards}
@@ -189,7 +190,7 @@
   .select-btn{background:linear-gradient(135deg,var(--my-bg1),var(--my-bg2));border:1px solid var(--my-b);color:var(--my-t);padding:14px 28px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer}
   .select-btn:active{opacity:.8}
 
-  @media(max-width:374px){body{padding:8px}h1{font-size:1.15rem}.cal{padding:8px}.cal-day{min-height:36px;font-size:.78rem}.g-hdr{font-size:.62rem;padding:8px 1px;letter-spacing:0}.g-time,.g-cell{font-size:.75rem;padding:12px 2px}.callout{font-size:.82rem;padding:10px 12px}.summary .count{font-size:1.8rem}.mode-btn{font-size:.75rem;padding:8px 4px}.icon-btn{width:32px;height:32px;font-size:1rem}}
+  @media(max-width:374px){body{padding:8px}h1{font-size:1.1rem;letter-spacing:0}.hdr-spacer{width:68px}.cal{padding:8px}.cal-day{min-height:36px;font-size:.78rem}.g-hdr{font-size:.62rem;padding:8px 1px;letter-spacing:0}.g-time,.g-cell{font-size:.75rem;padding:12px 2px}.callout{font-size:.82rem;padding:10px 12px}.summary .count{font-size:1.8rem}.mode-btn{font-size:.75rem;padding:8px 4px}.icon-btn{width:32px;height:32px;font-size:.95rem}}
   @media(min-width:375px)and (max-width:430px){.g-hdr{font-size:.68rem}}
 </style>
 </head>
@@ -417,12 +418,18 @@ function App(){
   const[teamLoading,setTeamLoading]=useState(true);
   const[showPicker,setShowPicker]=useState(false);
   const[showOpen,setShowOpen]=useState(false);
-  function readTeamsFromUrl(){const qt=new URLSearchParams(window.location.search).get('teams');return qt?qt.split(',').map(Number).filter(n=>n>0):[]}
-  function writeTeamsToUrl(ids){const u=new URL(window.location);if(ids.length)u.searchParams.set('teams',ids.join(','));else u.searchParams.delete('teams');window.history.replaceState(null,'',u)}
-  const[myTeams,setMyTeams]=useState(readTeamsFromUrl);
+  function readTeams(){
+    const qt=new URLSearchParams(window.location.search).get('teams');
+    if(qt){const ids=qt.split(',').map(Number).filter(n=>n>0);if(ids.length)return ids}
+    try{const j=localStorage.getItem('keva-teams');if(j)return JSON.parse(j)}catch{}
+    return[]}
+  function writeTeams(ids){
+    try{if(ids.length)localStorage.setItem('keva-teams',JSON.stringify(ids));else localStorage.removeItem('keva-teams')}catch{}
+    const u=new URL(window.location);if(ids.length)u.searchParams.set('teams',ids.join(','));else u.searchParams.delete('teams');window.history.replaceState(null,'',u)}
+  const[myTeams,setMyTeams]=useState(readTeams);
 
   useEffect(()=>{fetchTeamData().then(d=>{setTeamData(d);setTeamLoading(false)}).catch(()=>setTeamLoading(false))},[]);
-  function saveTeams(ids){setMyTeams(ids);writeTeamsToUrl(ids)}
+  function saveTeams(ids){setMyTeams(ids);writeTeams(ids)}
 
   const[opSessions,setOpSessions]=useState(null);const[opLoading,setOpLoading]=useState(false);const opF=useRef(false);
   useEffect(()=>{if(opF.current)return;opF.current=true;setOpLoading(true);fetchAllOpenPlay().then(s=>{setOpSessions(s);setOpLoading(false)}).catch(()=>setOpLoading(false))},[]);
@@ -483,6 +490,7 @@ function App(){
 
   return(<>
     <div className="header">
+      <div className="hdr-spacer"/>
       <h1>KEVA Open Courts</h1>
       <div className="hdr-btns">
         <button className="icon-btn" onClick={share} title="Copy link">&#128279;</button>
