@@ -505,8 +505,8 @@ function TeamPicker({leagues,teams,selectedIds,onDone,onClose}){
 
 function CourtMap(){
   const[show,setShow]=useState(false);
-  if(!show)return<div className="cm-toggle"><button onClick={()=>setShow(true)}>Show Court Map</button></div>;
-  return(<div className="court-map"><div className="cm-title">KEVA Court Layout <button onClick={()=>setShow(false)} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'.8rem'}}>&times;</button></div>
+  return(<><div className="cm-toggle"><button onClick={()=>setShow(s=>!s)}>{show?'Hide Court Map':'Show Court Map'}</button></div>
+    {show&&<div className="court-map"><div className="cm-title">KEVA Court Layout</div>
     <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
       <rect x="0" y="0" width="400" height="300" fill="var(--bg)" rx="8"/>
       {/* Soccer Fields */}
@@ -539,7 +539,7 @@ function CourtMap(){
       <rect x="300" y="220" width="80" height="65" rx="4" fill="var(--my-bg1)" stroke="var(--my-b)" strokeWidth="1.5"/>
       <text x="340" y="250" textAnchor="middle" fill="var(--my-t)" fontSize="9" fontWeight="700">Entrance</text>
       <text x="340" y="262" textAnchor="middle" fill="var(--muted)" fontSize="7">Front Desk</text>
-    </svg></div>)}
+    </svg></div>}</>)}
 
 function Loading(){return<div className="grid" style={{gridTemplateColumns:'1fr'}}><div className="loading-wrap">Loading<span className="spinner"/></div></div>}
 
@@ -566,7 +566,7 @@ function App(){
   const[teamData,setTeamData]=useState(null);const[teamLoading,setTeamLoading]=useState(true);const[showPicker,setShowPicker]=useState(false);const[showOpen,setShowOpen]=useState(false);
   function readTeams(){const qt=new URLSearchParams(window.location.search).get('teams');if(qt){const ids=qt.split(',').map(Number).filter(n=>n>0);if(ids.length)return ids}try{const j=localStorage.getItem('keva-teams');if(j)return JSON.parse(j)}catch{}return[]}
   function writeTeams(ids){try{if(ids.length)localStorage.setItem('keva-teams',JSON.stringify(ids));else localStorage.removeItem('keva-teams')}catch{}const u=new URL(window.location);if(ids.length)u.searchParams.set('teams',ids.join(','));else u.searchParams.delete('teams');window.history.replaceState(null,'',u)}
-  const[myTeams,setMyTeams]=useState(readTeams);
+  const[myTeams,setMyTeams]=useState(()=>{const t=readTeams();if(t.length)writeTeams(t);return t});
   useEffect(()=>{fetchTeamData().then(d=>{setTeamData(d);setTeamLoading(false)}).catch(()=>setTeamLoading(false))},[]);
   function saveTeams(ids){setMyTeams(ids);writeTeams(ids)}
 
