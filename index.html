@@ -13,7 +13,7 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script>(function(){var t=localStorage.getItem('keva-theme')||'dark';document.documentElement.setAttribute('data-theme',t);document.querySelector('meta[name=theme-color]').content=t==='light'?'#f8fafc':'#0a0e14'})()</script>
+<script>(function(){var s=localStorage.getItem('keva-theme');var t=s||(window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);document.querySelector('meta[name=theme-color]').content=t==='light'?'#f8fafc':'#0a0e14'})()</script>
 <style>
   :root,[data-theme="dark"]{
     --bg:#0a0e14;--text:#c5cdd9;--heading:#e6ecf5;--muted:#4a5568;--dim:#3a4555;--subtle:#2a3444;
@@ -78,7 +78,11 @@
   .mode-btn.active-op{background:var(--mode-op-bg);color:var(--mode-op-t)}
   .mode-btn.active-my{background:var(--mode-my-bg);color:var(--mode-my-t)}
 
-  .cal{margin-bottom:16px;background:var(--panel);border:1px solid var(--panel-b);border-radius:12px;padding:12px}
+  .cal-collapse{text-align:center;margin-bottom:8px}
+  .cal-collapse button{background:var(--panel);border:1px solid var(--panel-b);color:var(--muted);padding:6px 16px;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;width:100%}
+  .cal-collapse button:active{opacity:.7}
+  .cal{margin-bottom:16px;background:var(--panel);border:1px solid var(--panel-b);border-radius:12px;padding:12px;overflow:hidden;transition:max-height .3s ease}
+  .cal.collapsed{max-height:0;padding:0 12px;border-color:transparent;margin-bottom:0}
   .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .cal-nav button{background:0;border:1px solid var(--panel-b);color:var(--hdr-t);width:44px;height:44px;border-radius:10px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .cal-nav button:active{background:var(--panel-hover);color:var(--grid-t)}
@@ -227,6 +231,14 @@
 
   .swipe-area{touch-action:pan-y}
 
+  .court-map{background:var(--panel);border:1px solid var(--panel-b);border-radius:12px;padding:14px;margin-bottom:14px}
+  .court-map .cm-title{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;text-align:center}
+  .court-map svg{width:100%;height:auto;display:block}
+  .court-map text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+  .cm-toggle{text-align:center;margin-bottom:10px}
+  .cm-toggle button{background:0;border:1px solid var(--panel-b);color:var(--muted);padding:4px 12px;border-radius:6px;font-size:.7rem;font-weight:600;cursor:pointer}
+  .cm-toggle button:active{opacity:.7}
+
   @media(max-width:374px){body{padding:8px}h1{font-size:1.1rem;letter-spacing:0}.cal{padding:8px}.cal-day{min-height:36px;font-size:.78rem}.g-hdr{font-size:.62rem;padding:8px 1px;letter-spacing:0}.g-time,.g-cell{font-size:.75rem;padding:12px 2px}.callout{font-size:.82rem;padding:10px 12px}.summary .count{font-size:1.8rem}.mode-btn{font-size:.75rem;padding:8px 4px}.icon-btn{width:28px;height:28px;font-size:.85rem}.day-nav-btn{width:36px;height:36px;font-size:.9rem}}
   @media(min-width:375px)and (max-width:430px){.g-hdr{font-size:.68rem}}
 </style>
@@ -373,7 +385,7 @@ function Summary({openTotal,hasCourts,isVbDay}){
   if(openTotal===0)return<div className="summary fully-booked"><span className="count">Fully booked</span></div>;
   return<div className="summary has-open"><span className="count">{openTotal}</span><span className="label">open slot{openTotal!==1?'s':''}</span></div>}
 
-function ScheduleGrid({grid,courts,teamMap,hideOpen,vbStart,teamColors,theme,showNow,dateStr}){
+function ScheduleGrid({grid,courts,teamMap,hideOpen,vbStart,teamColors,theme,showNow,dateStr,rawGames,allTeamMap}){
   if(!courts.length)return null;
   let hasWarn=false;const now=showNow&&isToday(dateStr)?nowMins():-1;
   return(<>
@@ -391,7 +403,10 @@ function ScheduleGrid({grid,courts,teamMap,hideOpen,vbStart,teamColors,theme,sho
         if(!cell.booked&&hideOpen)return<div key={i} className="g-cell booked">{'\u2014'}</div>;
         if(!cell.booked){const es=vbStart&&courts[i]?vbStart[courts[i].res]:-1;const netUp=es>=0&&es<=slotMin;if(!netUp)hasWarn=true;
           return<div key={i} className={'g-cell '+(netUp?'open':'open-warn')}>{netUp?'OPEN':<>OPEN<br/>net?</>}</div>}
-        return<div key={i} className={'g-cell booked'+rc}>{'\u2014'}</div>})}
+        {// Booked cell - show team names if available
+        const gm=rawGames&&courts[i]?rawGames.find(g=>g.res===courts[i].res&&g.area===courts[i].area&&mins(g.start)<=slotMin&&slotMin<mins(g.end)):null;
+        const tn=gm&&allTeamMap?(allTeamMap[gm.ht]?.name||''):'';
+        return<div key={i} className={'g-cell booked'+rc} title={tn}>{tn?<span style={{fontSize:'.65rem',lineHeight:'1.1',opacity:.6}}>{tn}</span>:'\u2014'}</div>}})}
     </React.Fragment>})}</div>
     {hasWarn&&!hideOpen&&<div className="grid-legend"><span><span className="legend-dot green"/>Net likely up</span><span><span className="legend-dot yellow"/>Net uncertain</span></div>}
   </>)}
@@ -469,14 +484,54 @@ function TeamPicker({leagues,teams,selectedIds,onDone,onClose}){
       {t.map(tm=><div key={tm.id} className={'picker-team'+(sel.has(tm.id)?' sel':'')} onClick={()=>toggle(tm.id)}>{sel.has(tm.id)?'\u2713 ':''}{tm.name}</div>)}</div>})}
     </div></div></div>)}
 
+function CourtMap(){
+  const[show,setShow]=useState(false);
+  if(!show)return<div className="cm-toggle"><button onClick={()=>setShow(true)}>Show Court Map</button></div>;
+  return(<div className="court-map"><div className="cm-title">KEVA Court Layout <button onClick={()=>setShow(false)} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'.8rem'}}>&times;</button></div>
+    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="400" height="300" fill="var(--bg)" rx="8"/>
+      {/* Soccer Fields */}
+      <rect x="210" y="10" width="80" height="200" rx="4" fill="var(--open-bg1)" stroke="var(--open-b)" strokeWidth="1.5" opacity=".3"/>
+      <text x="250" y="115" textAnchor="middle" fill="var(--muted)" fontSize="9" fontWeight="600">Soccer 1</text>
+      <rect x="300" y="10" width="80" height="200" rx="4" fill="var(--open-bg1)" stroke="var(--open-b)" strokeWidth="1.5" opacity=".3"/>
+      <text x="340" y="115" textAnchor="middle" fill="var(--muted)" fontSize="9" fontWeight="600">Soccer 2</text>
+      {/* Walkway */}
+      <rect x="292" y="10" width="6" height="200" fill="var(--panel-b)" opacity=".5"/>
+      {/* Court 1 (glass enclosed) */}
+      <rect x="20" y="175" width="175" height="55" rx="4" fill="var(--accent-bg)" stroke="var(--accent)" strokeWidth="2" strokeDasharray="4,2"/>
+      <text x="107" y="200" textAnchor="middle" fill="var(--accent-t)" fontSize="11" fontWeight="700">Court 1</text>
+      <text x="107" y="213" textAnchor="middle" fill="var(--muted)" fontSize="7">glass enclosed</text>
+      {/* Court 2 */}
+      <rect x="20" y="105" width="175" height="60" rx="4" fill="var(--panel)" stroke="var(--panel-b)" strokeWidth="1.5"/>
+      <text x="107" y="138" textAnchor="middle" fill="var(--heading)" fontSize="11" fontWeight="700">Court 2</text>
+      <text x="107" y="150" textAnchor="middle" fill="var(--muted)" fontSize="7">open / nets</text>
+      {/* Court 3 */}
+      <rect x="20" y="10" width="175" height="85" rx="4" fill="var(--panel)" stroke="var(--panel-b)" strokeWidth="1.5"/>
+      <line x1="107" y1="12" x2="107" y2="93" stroke="var(--panel-b)" strokeWidth="1" strokeDasharray="3,3"/>
+      <text x="63" y="50" textAnchor="middle" fill="var(--heading)" fontSize="10" fontWeight="700">Ct 3 East</text>
+      <text x="63" y="62" textAnchor="middle" fill="var(--muted)" fontSize="7">(outer wall)</text>
+      <text x="150" y="50" textAnchor="middle" fill="var(--heading)" fontSize="10" fontWeight="700">Ct 3 West</text>
+      <text x="150" y="62" textAnchor="middle" fill="var(--muted)" fontSize="7">(soccer side)</text>
+      {/* Food / WC / Entrance */}
+      <rect x="20" y="245" width="60" height="40" rx="4" fill="var(--panel)" stroke="var(--panel-b)" strokeWidth="1"/>
+      <text x="50" y="268" textAnchor="middle" fill="var(--muted)" fontSize="8" fontWeight="600">WC</text>
+      <rect x="90" y="245" width="120" height="40" rx="4" fill="var(--warn-bg1)" stroke="var(--warn-b)" strokeWidth="1"/>
+      <text x="150" y="268" textAnchor="middle" fill="var(--warn-t)" fontSize="8" fontWeight="600">Food / Sidelines</text>
+      <rect x="300" y="220" width="80" height="65" rx="4" fill="var(--my-bg1)" stroke="var(--my-b)" strokeWidth="1.5"/>
+      <text x="340" y="250" textAnchor="middle" fill="var(--my-t)" fontSize="9" fontWeight="700">Entrance</text>
+      <text x="340" y="262" textAnchor="middle" fill="var(--muted)" fontSize="7">Front Desk</text>
+    </svg></div>)}
+
 function Loading(){return<div className="grid" style={{gridTemplateColumns:'1fr'}}><div className="loading-wrap">Loading<span className="spinner"/></div></div>}
 
 /* ============ App ============ */
 function App(){
   const[dateStr,setDateStr]=useState(getDefaultDate);
-  const[mode,setMode]=useState('games');
+  const[mode,setModeRaw]=useState(()=>pref('keva-tab','games'));
+  function setMode(m){setModeRaw(m);spref('keva-tab',m)}
+  const[calOpen,setCalOpen]=useState(false);
   const[weekStart,setWeekStart]=useState(()=>Number(pref('keva-ws','0')));
-  const[theme,setTheme]=useState(()=>pref('keva-theme','dark'));
+  const[theme,setTheme]=useState(()=>{const s=pref('keva-theme',null);return s||(window.matchMedia?.('(prefers-color-scheme:light)').matches?'light':'dark')});
   const[gameState,setGameState]=useState({status:'loading'});
   const[copied,setCopied]=useState(false);
   const refreshRef=useRef(0);
@@ -523,7 +578,7 @@ function App(){
     const games=parseGames(raw);const courts=discoverCourts(games);const grid=buildGrid(games,courts,slots,myIds);
     const ct3bb=raw.some(e=>e.attributes.resource_id===3&&!e.attributes.resource_area_id&&VB_RES.includes(e.attributes.resource_id));
     const ck=new Set(courts.map(c=>c.res));const missing=[];if(!ck.has(5))missing.push('Court 1');if(!ck.has(4))missing.push('Court 2');if(!courts.some(c=>c.res===3))missing.push('Court 3');
-    const vbStart=computeVbStart(allEvts,courts);setGameState({status:'ok',courts,grid,ct3bb,missing,vbStart,allGames:games,updatedAt:new Date().toLocaleTimeString()})}).catch(e=>setGameState({status:'error',message:e.message})),[dateStr,myIds,slots]);
+    const vbStart=computeVbStart(allEvts,courts);setGameState({status:'ok',courts,grid,ct3bb,missing,vbStart,allGames:games,rawGames:games,updatedAt:new Date().toLocaleTimeString()})}).catch(e=>setGameState({status:'error',message:e.message})),[dateStr,myIds,slots]);
 
   useEffect(()=>{setGameState({status:'loading'});fetchDay();clearInterval(refreshRef.current);
     if(isToday(dateStr)){refreshRef.current=setInterval(()=>{if(!document.hidden)fetchDay()},REFRESH_MS)}
@@ -551,7 +606,8 @@ function App(){
     {copied&&<div className="copied">Link copied!</div>}
     <div className="subtitle"><span>Volleyball Court Availability</span><div className="hdr-btns"><button className="icon-btn" onClick={share} title="Copy link">&#128279;</button><button className="icon-btn" onClick={toggleTheme} title="Toggle theme">{theme==='dark'?'\u2600':'\u263E'}</button></div></div>
     <ModeToggle mode={mode} onChange={setMode}/>
-    <Calendar selected={dateStr} onSelect={setDateStr} getDots={getDots} weekStart={weekStart} onWeekStartChange={handleWS} viewYear={calYear} viewMonth={calMonth} onViewChange={handleView}/>
+    <div className="cal-collapse"><button onClick={()=>setCalOpen(o=>!o)}>{calOpen?'Hide Calendar':'Show Calendar'}</button></div>
+    <div className={calOpen?'':'cal collapsed'}>{calOpen&&<Calendar selected={dateStr} onSelect={d=>{setDateStr(d);setCalOpen(false)}} getDots={getDots} weekStart={weekStart} onWeekStartChange={handleWS} viewYear={calYear} viewMonth={calMonth} onViewChange={handleView}/>}</div>
     <DayNav dateStr={dateStr} onDateChange={setDateStr}/>
 
     {mode==='games'&&<>
@@ -559,7 +615,8 @@ function App(){
       {gameState.status==='ok'&&<>
         <Summary openTotal={gameState.grid.openTotal} hasCourts={gameState.courts.length>0} isVbDay={isVbDay}/>
         {isVbDay&&gameState.courts.length>0&&<>
-          <ScheduleGrid grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart} showNow dateStr={dateStr}/>
+          <CourtMap/>
+          <ScheduleGrid grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart} showNow dateStr={dateStr} rawGames={gameState.rawGames} allTeamMap={teamData?.teamMap}/>
           <Callouts grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart}/>
           {gameState.missing.length>0&&!gameState.ct3bb&&<div className="bb-note">{gameState.missing.join(', ')} not scheduled for volleyball tonight</div>}
           {gameState.ct3bb&&gameState.missing.filter(c=>c!=='Court 3').length>0&&<div className="bb-note">{gameState.missing.filter(c=>c!=='Court 3').join(', ')} not scheduled for volleyball tonight</div>}
