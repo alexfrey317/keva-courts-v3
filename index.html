@@ -81,8 +81,9 @@
   .cal-collapse{text-align:center;margin-bottom:8px}
   .cal-collapse button{background:var(--panel);border:1px solid var(--panel-b);color:var(--muted);padding:6px 16px;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;width:100%}
   .cal-collapse button:active{opacity:.7}
-  .cal{margin-bottom:16px;background:var(--panel);border:1px solid var(--panel-b);border-radius:12px;padding:12px;overflow:hidden;transition:max-height .3s ease}
-  .cal.collapsed{max-height:0;padding:0 12px;border-color:transparent;margin-bottom:0}
+  .cal-wrap{display:none;margin-bottom:16px}
+  .cal-wrap.open{display:block}
+  .cal{background:var(--panel);border:1px solid var(--panel-b);border-radius:12px;padding:12px}
   .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .cal-nav button{background:0;border:1px solid var(--panel-b);color:var(--hdr-t);width:44px;height:44px;border-radius:10px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .cal-nav button:active{background:var(--panel-hover);color:var(--grid-t)}
@@ -241,6 +242,18 @@
 
   @media(max-width:374px){body{padding:8px}h1{font-size:1.1rem;letter-spacing:0}.cal{padding:8px}.cal-day{min-height:36px;font-size:.78rem}.g-hdr{font-size:.62rem;padding:8px 1px;letter-spacing:0}.g-time,.g-cell{font-size:.75rem;padding:12px 2px}.callout{font-size:.82rem;padding:10px 12px}.summary .count{font-size:1.8rem}.mode-btn{font-size:.75rem;padding:8px 4px}.icon-btn{width:28px;height:28px;font-size:.85rem}.day-nav-btn{width:36px;height:36px;font-size:.9rem}}
   @media(min-width:375px)and (max-width:430px){.g-hdr{font-size:.68rem}}
+
+  /* ---- Wide screen (tablet/desktop) ---- */
+  @media(min-width:768px){
+    #root{max-width:960px}
+    .wide-layout{display:flex;gap:16px;align-items:flex-start}
+    .wide-sidebar{width:320px;flex-shrink:0;position:sticky;top:12px}
+    .wide-main{flex:1;min-width:0}
+    .cal-collapse{display:none}
+    .cal-wrap{display:block!important;margin-bottom:16px}
+    .mode-toggle{margin-bottom:10px}
+    .summary{margin-bottom:10px}
+  }
 </style>
 </head>
 <body>
@@ -476,7 +489,7 @@ function TeamPicker({leagues,teams,selectedIds,onDone,onClose}){
   function toggle(id){setSel(s=>{const n=new Set(s);n.has(id)?n.delete(id):n.add(id);return n})}
   function done(){onDone([...sel]);onClose()}
   return(<div className="picker-overlay" onClick={e=>{if(e.target===e.currentTarget)done()}}>
-    <div className="picker-modal"><div className="picker-header"><h2>Select Your Teams</h2><button className="picker-done" onClick={done}>Done{sel.size>0&&` (${sel.size})`}</button></div>
+    <div className="picker-modal"><div className="picker-header"><h2>Select Your Teams</h2><div style={{display:'flex',gap:'6px'}}>{sel.size>0&&<button className="picker-done" style={{background:'var(--panel)',color:'var(--muted)',border:'1px solid var(--panel-b)'}} onClick={()=>setSel(new Set())}>Clear all</button>}<button className="picker-done" onClick={done}>Done{sel.size>0&&` (${sel.size})`}</button></div></div>
     <input className="picker-search" placeholder="Search teams..." value={q} onChange={e=>setQ(e.target.value)} autoFocus/>
     <div className="picker-list">
     {filtered?filtered.map(tm=><div key={tm.id} className={'picker-team'+(sel.has(tm.id)?' sel':'')} onClick={()=>toggle(tm.id)}>{sel.has(tm.id)?'\u2713 ':''}{tm.name} <span style={{fontSize:'.7rem',color:'var(--muted)'}}>{tm.leagueName}</span></div>)
@@ -606,9 +619,13 @@ function App(){
     {copied&&<div className="copied">Link copied!</div>}
     <div className="subtitle"><span>Volleyball Court Availability</span><div className="hdr-btns"><button className="icon-btn" onClick={share} title="Copy link">&#128279;</button><button className="icon-btn" onClick={toggleTheme} title="Toggle theme">{theme==='dark'?'\u2600':'\u263E'}</button></div></div>
     <ModeToggle mode={mode} onChange={setMode}/>
+    <div className="wide-layout">
+    <div className="wide-sidebar">
     <div className="cal-collapse"><button onClick={()=>setCalOpen(o=>!o)}>{calOpen?'Hide Calendar':'Show Calendar'}</button></div>
-    <div className={calOpen?'':'cal collapsed'}>{calOpen&&<Calendar selected={dateStr} onSelect={d=>{setDateStr(d);setCalOpen(false)}} getDots={getDots} weekStart={weekStart} onWeekStartChange={handleWS} viewYear={calYear} viewMonth={calMonth} onViewChange={handleView}/>}</div>
+    <div className={calOpen?'cal-wrap open':'cal-wrap'}><Calendar selected={dateStr} onSelect={d=>{setDateStr(d);setCalOpen(false)}} getDots={getDots} weekStart={weekStart} onWeekStartChange={handleWS} viewYear={calYear} viewMonth={calMonth} onViewChange={handleView}/></div>
     <DayNav dateStr={dateStr} onDateChange={setDateStr}/>
+    </div>
+    <div className="wide-main">
 
     {mode==='games'&&<>
       {gameState.status==='loading'&&<Loading/>}
@@ -658,6 +675,7 @@ function App(){
       </>}
     </>}
 
+    </div></div>
     {showPicker&&teamData&&<TeamPicker leagues={teamData.leagues} teams={teamData.teams} selectedIds={myTeams} onDone={saveTeams} onClose={()=>setShowPicker(false)}/>}
   </>)}
 
