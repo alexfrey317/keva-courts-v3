@@ -157,7 +157,7 @@ export function App() {
           <DayNav dateStr={dateStr} onDateChange={setDateStr} />
 
           <div className="wide-sidebar-extra">
-            {mode !== 'openplay' && gameState.status === 'ok' && (
+            {(mode === 'games' || (mode === 'myteam' && showOpen)) && gameState.status === 'ok' && (
               <Summary openTotal={gameState.grid.openTotal} hasCourts={gameState.courts.length > 0} isVbDay={isVbDay} />
             )}
             {myTeamObjs.length > 0 && (
@@ -312,7 +312,7 @@ export function App() {
                           )}
                         </>
                       ) : (
-                        <Summary openTotal={gameState.grid.openTotal} hasCourts={gameState.courts.length > 0} isVbDay={isVbDay} />
+                        <div className="summary no-games">Your team doesn't play this day</div>
                       )}
                       <div className="status">
                         Live data &middot; updated {gameState.updatedAt}
