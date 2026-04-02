@@ -25,7 +25,6 @@ import { TeamPicker } from './components/TeamPicker/TeamPicker';
 import { CourtMapModal } from './components/CourtMap/CourtMapModal';
 import { NextGameCard } from './components/Common/NextGameCard';
 import { Loading } from './components/Common/Loading';
-import { EmptyState } from './components/Common/EmptyState';
 
 export function App() {
   // ── Date & navigation ──
@@ -245,7 +244,6 @@ export function App() {
             <>
               {!myTeamObjs.length && (
                 <div className="select-prompt">
-                  <EmptyState variant="pick-team" />
                   <p>Pick your teams to see your game schedule highlighted on the court grid</p>
                   <button
                     className="select-btn"

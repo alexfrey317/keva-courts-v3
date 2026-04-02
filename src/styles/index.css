@@ -1401,7 +1401,8 @@ h1 {
     display: block;
   }
   .wide-main .team-banner,
-  .wide-main .next-game {
+  .wide-main .next-game,
+  .wide-main .summary {
     display: none;
   }
 }
