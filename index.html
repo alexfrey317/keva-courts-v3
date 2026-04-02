@@ -64,12 +64,11 @@
   body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;min-height:100vh;min-height:100dvh;padding:12px;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom));touch-action:manipulation;-webkit-text-size-adjust:100%;transition:background .2s,color .2s}
   #root{max-width:540px;margin:0 auto}
 
-  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
-  .hdr-spacer{width:80px;flex-shrink:0}
-  h1{font-size:1.4rem;font-weight:700;color:var(--heading);letter-spacing:1px;text-transform:uppercase;text-align:center;flex:1;min-width:0}
-  .subtitle{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:12px}
-  .hdr-btns{display:flex;gap:4px;flex-shrink:0}
-  .icon-btn{background:0;border:1px solid var(--panel-b);color:var(--theme-btn-t);width:36px;height:36px;border-radius:8px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .header{text-align:center;margin-bottom:2px}
+  h1{font-size:1.4rem;font-weight:700;color:var(--heading);letter-spacing:1px;text-transform:uppercase}
+  .subtitle{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .hdr-btns{display:flex;gap:4px}
+  .icon-btn{background:0;border:1px solid var(--panel-b);color:var(--theme-btn-t);width:30px;height:30px;border-radius:6px;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .icon-btn:active{opacity:.7}
   .copied{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--open-b);color:var(--open-t);padding:8px 20px;border-radius:8px;font-size:.85rem;font-weight:600;z-index:200;animation:fadeout 2s forwards}
   @keyframes fadeout{0%,70%{opacity:1}100%{opacity:0}}
@@ -190,7 +189,7 @@
   .select-btn{background:linear-gradient(135deg,var(--my-bg1),var(--my-bg2));border:1px solid var(--my-b);color:var(--my-t);padding:14px 28px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer}
   .select-btn:active{opacity:.8}
 
-  @media(max-width:374px){body{padding:8px}h1{font-size:1.1rem;letter-spacing:0}.hdr-spacer{width:68px}.cal{padding:8px}.cal-day{min-height:36px;font-size:.78rem}.g-hdr{font-size:.62rem;padding:8px 1px;letter-spacing:0}.g-time,.g-cell{font-size:.75rem;padding:12px 2px}.callout{font-size:.82rem;padding:10px 12px}.summary .count{font-size:1.8rem}.mode-btn{font-size:.75rem;padding:8px 4px}.icon-btn{width:32px;height:32px;font-size:.95rem}}
+  @media(max-width:374px){body{padding:8px}h1{font-size:1.1rem;letter-spacing:0}.cal{padding:8px}.cal-day{min-height:36px;font-size:.78rem}.g-hdr{font-size:.62rem;padding:8px 1px;letter-spacing:0}.g-time,.g-cell{font-size:.75rem;padding:12px 2px}.callout{font-size:.82rem;padding:10px 12px}.summary .count{font-size:1.8rem}.mode-btn{font-size:.75rem;padding:8px 4px}.icon-btn{width:28px;height:28px;font-size:.85rem}}
   @media(min-width:375px)and (max-width:430px){.g-hdr{font-size:.68rem}}
 </style>
 </head>
@@ -490,15 +489,16 @@ function App(){
 
   return(<>
     <div className="header">
-      <div className="hdr-spacer"/>
       <h1>KEVA Open Courts</h1>
+    </div>
+    {copied&&<div className="copied">Link copied!</div>}
+    <div className="subtitle">
+      <span>Volleyball Court Availability</span>
       <div className="hdr-btns">
         <button className="icon-btn" onClick={share} title="Copy link">&#128279;</button>
         <button className="icon-btn" onClick={toggleTheme} title="Toggle theme">{theme==='dark'?'\u2600':'\u263E'}</button>
       </div>
     </div>
-    {copied&&<div className="copied">Link copied!</div>}
-    <p className="subtitle">Volleyball Court Availability</p>
     <ModeToggle mode={mode} onChange={setMode}/>
     <Calendar selected={dateStr} onSelect={setDateStr} getDots={getDots} weekStart={weekStart} onWeekStartChange={handleWS} viewYear={calYear} viewMonth={calMonth} onViewChange={handleView}/>
     <div className="date-display">{formatDate(dateStr)}</div>
