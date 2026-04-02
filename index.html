@@ -406,6 +406,7 @@ function NextGameCard({myTeamDateMap,teamColorMap,teamMap,theme,dateStr,onGo}){
 
 function SeasonSchedule({allGames,myTeamIds,teamMap,teamColorMap,theme,onDateChange}){
   const[view,setView]=useState('upcoming');
+  const[sortBy,setSortBy]=useState('date');
   const today=ds(new Date());
   const games=useMemo(()=>{
     const matched=[];for(const g of allGames){const isH=myTeamIds.has(g.ht);const isA=myTeamIds.has(g.vt);if(!isH&&!isA)continue;
@@ -413,18 +414,33 @@ function SeasonSchedule({allGames,myTeamIds,teamMap,teamColorMap,theme,onDateCha
       const won=g.hs!=null?(isH?g.hs>g.vs:g.vs>g.hs):null;
       matched.push({date:g.date,time:g.start,myTid,oppId,won,hs:g.hs,vs:g.vs,isHome:isH})}
     matched.sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));return matched},[allGames,myTeamIds]);
-  const filtered=view==='upcoming'?games.filter(g=>g.date>=today):games.filter(g=>g.date<today).reverse();
+  const filtered=useMemo(()=>{
+    const list=view==='upcoming'?games.filter(g=>g.date>=today):games.filter(g=>g.date<today).reverse();
+    if(sortBy==='team'){const copy=[...list];copy.sort((a,b)=>{const an=teamMap[a.myTid]?.name||'';const bn=teamMap[b.myTid]?.name||'';return an.localeCompare(bn)||a.date.localeCompare(b.date)});return copy}
+    return list},[games,view,sortBy,today,teamMap]);
+  // Group by team when sorted by team
+  const grouped=sortBy==='team';
+  let lastTid=null;
   return(<>
-    <div className="sched-toggle"><button className={view==='upcoming'?'active':''} onClick={()=>setView('upcoming')}>Upcoming</button><button className={view==='past'?'active':''} onClick={()=>setView('past')}>Past</button></div>
+    <div className="sched-toggle">
+      <button className={view==='upcoming'?'active':''} onClick={()=>setView('upcoming')}>Upcoming</button>
+      <button className={view==='past'?'active':''} onClick={()=>setView('past')}>Past</button>
+      <button className={sortBy==='date'?'active':''} onClick={()=>setSortBy('date')}>By Date</button>
+      <button className={sortBy==='team'?'active':''} onClick={()=>setSortBy('team')}>By Team</button>
+    </div>
     {filtered.length===0&&<div className="summary no-games">{view==='upcoming'?'No upcoming games':'No past games'}</div>}
     <div className="sched-list">{filtered.map((g,i)=>{
       const ci=teamColorMap.get(g.myTid);const cc=ci!==undefined?tc(ci,theme):null;
       const opp=teamMap[g.oppId]?.name||'TBD';
-      return<div key={i} className={'sched-row'+(g.date<today?' past-game':'')} onClick={()=>onDateChange(g.date)} style={cc?{borderColor:cc.b}:{}}>
+      const myName=teamMap[g.myTid]?.name||'';
+      const showHeader=grouped&&g.myTid!==lastTid;lastTid=g.myTid;
+      return<React.Fragment key={i}>
+        {showHeader&&<div className="picker-league-name" style={cc?{color:cc.t,borderColor:cc.b}:{}}>{myName}</div>}
+        <div className={'sched-row'+(g.date<today?' past-game':'')} onClick={()=>onDateChange(g.date)} style={cc?{borderColor:cc.b}:{}}>
         <span className="sr-date">{fmtShort(g.date)} {fmt12(g.time)}</span>
         <span className="sr-vs">vs {opp}</span>
         {g.hs!=null&&<span className={'sr-score '+(g.won?'sr-w':'sr-l')}>{g.isHome?g.hs:g.vs}-{g.isHome?g.vs:g.hs}</span>}
-      </div>})}</div>
+      </div></React.Fragment>})}</div>
   </>)}
 
 function StandingsView({allGames,teamMap,myTeamObjs,myTeamIds}){
