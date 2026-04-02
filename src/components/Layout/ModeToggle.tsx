@@ -1,0 +1,37 @@
+import type { Mode } from '../../types';
+
+interface ModeToggleProps {
+  mode: Mode;
+  onChange: (mode: Mode) => void;
+}
+
+export function ModeToggle({ mode, onChange }: ModeToggleProps) {
+  return (
+    <div className="mode-toggle">
+      <button
+        className={'mode-btn' + (mode === 'games' ? ' active-games' : '')}
+        onClick={() => onChange('games')}
+      >
+        Games
+      </button>
+      <button
+        className={'mode-btn' + (mode === 'openplay' ? ' active-op' : '')}
+        onClick={() => onChange('openplay')}
+      >
+        Open Play
+      </button>
+      <button
+        className={'mode-btn' + (mode === 'myteam' ? ' active-my' : '')}
+        onClick={() => onChange('myteam')}
+      >
+        My Team(s)
+      </button>
+      <button
+        className={'mode-btn' + (mode === 'season' ? ' active-my' : '')}
+        onClick={() => onChange('season')}
+      >
+        Season
+      </button>
+    </div>
+  );
+}
