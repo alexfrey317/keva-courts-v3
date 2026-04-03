@@ -24,9 +24,9 @@ export function CourtMapModal({ onClose }: CourtMapModalProps) {
           <rect x="20" y="10" width="175" height="85" rx="4" fill="var(--panel)" stroke="var(--panel-b)" strokeWidth="1.5" />
           <line x1="107" y1="12" x2="107" y2="93" stroke="var(--panel-b)" strokeWidth="1" strokeDasharray="3,3" />
           <text x="63" y="50" textAnchor="middle" fill="var(--heading)" fontSize="10" fontWeight="700">Ct 3 West</text>
-          <text x="63" y="62" textAnchor="middle" fill="var(--muted)" fontSize="7">(soccer side)</text>
+          <text x="63" y="62" textAnchor="middle" fill="var(--muted)" fontSize="7">(outer wall)</text>
           <text x="150" y="50" textAnchor="middle" fill="var(--heading)" fontSize="10" fontWeight="700">Ct 3 East</text>
-          <text x="150" y="62" textAnchor="middle" fill="var(--muted)" fontSize="7">(outer wall)</text>
+          <text x="150" y="62" textAnchor="middle" fill="var(--muted)" fontSize="7">(soccer side)</text>
           <rect x="20" y="245" width="60" height="40" rx="4" fill="var(--panel)" stroke="var(--panel-b)" strokeWidth="1" />
           <text x="50" y="268" textAnchor="middle" fill="var(--muted)" fontSize="8" fontWeight="600">WC</text>
           <rect x="90" y="245" width="120" height="40" rx="4" fill="var(--warn-bg1)" stroke="var(--warn-b)" strokeWidth="1" />

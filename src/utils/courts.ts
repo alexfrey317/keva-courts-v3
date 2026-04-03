@@ -6,8 +6,8 @@ import { toMinutes } from './dates';
 export function courtName(res: number, area: number): string {
   if (res === 5) return 'Court 1';
   if (res === 4) return 'Court 2';
-  if (res === 3 && area === 51) return 'Ct 3 East';
-  if (res === 3 && area === 52) return 'Ct 3 West';
+  if (res === 3 && area === 51) return 'Ct 3 West';
+  if (res === 3 && area === 52) return 'Ct 3 East';
   if (res === 3) return 'Court 3';
   return 'Court ?';
 }
