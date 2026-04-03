@@ -25,7 +25,7 @@ import type { TeamColorTuple } from '../types';
 export const TEAM_COLORS: TeamColorTuple[] = [
   ['#c4b5fd', '#1a0a2e', '#2d1450', '#7c3aed', '#6d28d9', '#f5f3ff', '#ede9fe', '#a78bfa'],
   ['#f9a8d4', '#2e0a1a', '#4a1030', '#db2777', '#db2777', '#fdf2f8', '#fce7f3', '#f9a8d4'],
-  ['#fdba74', '#2e1a00', '#4a2a00', '#ea580c', '#ea580c', '#fff7ed', '#ffedd5', '#fdba74'],
+  ['#fdba74', '#2e1a00', '#4a2a00', '#ea580c', '#ce4a0c', '#fff7ed', '#ffedd5', '#fdba74'],
   ['#5eead4', '#042f2e', '#0a4a48', '#0d9488', '#0d9488', '#f0fdfa', '#ccfbf1', '#5eead4'],
   ['#93c5fd', '#0a1a2e', '#102a50', '#2563eb', '#2563eb', '#eff6ff', '#dbeafe', '#93c5fd'],
   ['#fda4af', '#2e0a10', '#4a1020', '#e11d48', '#e11d48', '#fff1f2', '#ffe4e6', '#fda4af'],

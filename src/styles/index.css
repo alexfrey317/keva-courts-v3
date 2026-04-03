@@ -495,10 +495,10 @@ h1 {
   font-weight: 700;
 }
 .cal-day.past {
-  opacity: 0.4;
+  color: var(--muted);
 }
 .cal-day.overflow {
-  opacity: 0.35;
+  color: var(--muted);
   font-size: 0.75rem;
 }
 
