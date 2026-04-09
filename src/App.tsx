@@ -62,6 +62,7 @@ export function App() {
   const [copied, setCopied] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const share = () => {
     navigator.clipboard.writeText(window.location.href)
@@ -79,6 +80,20 @@ export function App() {
   const isVbDay = checkVbDay(dateStr);
   const myIds = mode === 'myteam' && myTeamIdSet.size > 0 ? myTeamIdSet : null;
   const { gameState, refetch } = useGameData(dateStr, myIds);
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    const startedAt = Date.now();
+    setRefreshing(true);
+
+    try {
+      await refetch();
+    } finally {
+      const minVisibleMs = 650;
+      const remainingMs = Math.max(0, minVisibleMs - (Date.now() - startedAt));
+      window.setTimeout(() => setRefreshing(false), remainingMs);
+    }
+  }, [refetch, refreshing]);
 
   // ── Open play ──
   const { sessions: opSessions, loading: opLoading, opDates, todaySessions: todayOp } = useOpenPlay(dateStr);
@@ -130,7 +145,8 @@ export function App() {
           onToggleTheme={toggleTheme}
           onShowMap={() => setShowMap(true)}
           onShare={share}
-          onRefresh={refetch}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
           copied={copied}
         />
         {showMap && <Suspense><CourtMapModal onClose={() => setShowMap(false)} /></Suspense>}
