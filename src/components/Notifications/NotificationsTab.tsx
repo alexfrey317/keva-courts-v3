@@ -17,13 +17,26 @@ export function NotificationsTab({
   supported,
   hasTeams,
 }: NotificationsTabProps) {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
+  const isIos = /iphone|ipad|ipod/.test(ua);
+  const isStandalone = typeof window !== 'undefined'
+    && (window.matchMedia?.('(display-mode: standalone)').matches || (navigator as any).standalone === true);
+
   if (!supported) {
     return (
       <div className="notif-panel">
         <div className="notif-header">
           <h2>Notifications</h2>
           <p className="notif-desc">
-            Notifications are not supported in this browser. Try Chrome or add this app to your home screen.
+            Push alerts are not available in this browser context yet.
+          </p>
+        </div>
+        <div className="notif-guide">
+          <p className="notif-guide-title">What to try</p>
+          <p className="notif-hint">
+            {isIos
+              ? 'On iPhone or iPad, install the app from Share > Add to Home Screen, then open the installed app and try again.'
+              : 'Use Chrome or Edge, or install the PWA, then return here to enable alerts.'}
           </p>
         </div>
       </div>
@@ -46,20 +59,51 @@ export function NotificationsTab({
         <div className="notif-blocked">
           <p>Notifications are blocked in your browser.</p>
           <p className="notif-hint">
-            Tap the lock icon in your address bar and allow notifications for this site.
+            {isIos
+              ? 'Open the installed app, then allow notifications in iPhone Settings for this app.'
+              : 'Open the site settings from the lock icon in your address bar and allow notifications.'}
           </p>
         </div>
       ) : needsPermission ? (
         <div className="notif-enable">
+          <div className="notif-guide">
+            <p className="notif-guide-title">Before you enable alerts</p>
+            <p className="notif-hint">
+              {isIos && !isStandalone
+                ? 'Install the app to your Home Screen first. Safari only allows push from the installed app.'
+                : 'You can enable alerts here, then fine-tune which ones you want below.'}
+            </p>
+            {!hasTeams && (
+              <p className="notif-hint">
+                Select your teams first if you want game day and score alerts. Open court and open play alerts can work without teams.
+              </p>
+            )}
+          </div>
           <button className="notif-enable-btn" onClick={requestPermission}>
             Enable Push Notifications
           </button>
           <p className="notif-hint">
-            Your browser will ask for permission. On iOS, add this app to your home screen first.
+            {isIos
+              ? 'After the prompt, keep using the Home Screen app for the best results.'
+              : 'Your browser will ask for permission, then alerts can arrive even when the app is closed.'}
           </p>
         </div>
       ) : (
         <div className="notif-settings">
+          <div className="notif-guide compact">
+            <p className="notif-guide-title">Alert readiness</p>
+            <p className="notif-hint">
+              {hasTeams
+                ? 'Game day and score alerts are ready for your selected teams.'
+                : 'Select teams in My Teams if you want game day and score alerts.'}
+            </p>
+            {isIos && !isStandalone && (
+              <p className="notif-hint">
+                Keep using the installed Home Screen app on iPhone or iPad so alerts continue to work reliably.
+              </p>
+            )}
+          </div>
+
           <label className="notif-toggle">
             <span className="notif-toggle-info">
               <strong>Notifications</strong>

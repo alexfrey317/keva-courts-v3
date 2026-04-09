@@ -27,6 +27,14 @@ export interface ApiResponse {
   };
 }
 
+export type DataSource = 'live' | 'cached';
+
+export interface SourceResult<T> {
+  data: T;
+  source: DataSource;
+  fetchedAt: string;
+}
+
 // Parsed game
 export interface Game {
   res: number;
@@ -113,6 +121,8 @@ export interface GameState {
   vbStart: Record<number, number>;
   rawGames: Game[];
   updatedAt: string;
+  source: DataSource | null;
+  fetchedAt: string;
   message?: string;
 }
 

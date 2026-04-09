@@ -4,6 +4,26 @@ import { calendarDays } from '../utils/dates';
 import { getTeamColor } from '../utils/theme';
 import { fetchDayOpenCount } from '../api/daysmart';
 
+const DOT_CACHE_KEY = 'keva-dot-counts:v1';
+
+function readDotCache(): Map<string, number> {
+  try {
+    const raw = window.localStorage.getItem(DOT_CACHE_KEY);
+    if (!raw) return new Map();
+    return new Map(Object.entries(JSON.parse(raw) as Record<string, number>));
+  } catch {
+    return new Map();
+  }
+}
+
+function writeDotCache(cache: Map<string, number>): void {
+  try {
+    window.localStorage.setItem(DOT_CACHE_KEY, JSON.stringify(Object.fromEntries(cache)));
+  } catch {
+    // Ignore storage write failures for this non-critical hint data.
+  }
+}
+
 export function useCalendarDots(
   calYear: number,
   calMonth: number,
@@ -16,11 +36,13 @@ export function useCalendarDots(
   allSeasonGames: Game[] | null,
   myTeamIds: Set<number>,
 ) {
-  const gdCache = useRef(new Map<string, number>());
+  const gdCache = useRef(readDotCache());
   const [gameDots, setGameDots] = useState(new Set<string>());
 
   // Fetch open court counts for calendar dots
   useEffect(() => {
+    if (mode !== 'games') return;
+
     const cells = calendarDays(calYear, calMonth, weekStart);
     const vbDates = [...new Set(cells.filter((c) => c.isVb && !c.isPast).map((c) => c.str))];
     setGameDots(new Set(vbDates.filter((d) => (gdCache.current.get(d) || 0) > 0)));
@@ -32,11 +54,14 @@ export function useCalendarDots(
     async function run() {
       const queue = [...uncached];
       while (queue.length && !cancelled) {
-        const batch = queue.splice(0, 6);
+        const batch = queue.splice(0, 2);
         await Promise.all(
           batch.map((d) =>
             fetchDayOpenCount(d)
-              .then((n) => gdCache.current.set(d, n))
+              .then((result) => {
+                gdCache.current.set(d, result.data);
+                writeDotCache(gdCache.current);
+              })
               .catch(() => gdCache.current.set(d, -1)),
           ),
         );
@@ -47,7 +72,7 @@ export function useCalendarDots(
     }
     run();
     return () => { cancelled = true; };
-  }, [calYear, calMonth, weekStart]);
+  }, [calYear, calMonth, weekStart, mode]);
 
   const getDots = useCallback(
     (dateStr: string): string[] => {

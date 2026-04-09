@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Team, TeamData } from '../types';
+import type { Team, TeamData, DataSource } from '../types';
 import { fetchTeamData } from '../api/daysmart';
 import { getTeamColor } from '../utils/theme';
 import { parseDayFromLeague, toDateStr } from '../utils/dates';
@@ -32,6 +32,9 @@ function writeTeams(ids: number[]): void {
 export function useTeams() {
   const [teamData, setTeamData] = useState<TeamData | null>(null);
   const [teamLoading, setTeamLoading] = useState(true);
+  const [teamError, setTeamError] = useState<string | null>(null);
+  const [teamSource, setTeamSource] = useState<DataSource | null>(null);
+  const [teamFetchedAt, setTeamFetchedAt] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [myTeams, setMyTeams] = useState<number[]>(() => {
     const teams = readTeamsFromUrl();
@@ -39,11 +42,25 @@ export function useTeams() {
     return teams;
   });
 
-  useEffect(() => {
-    fetchTeamData()
-      .then((d) => { setTeamData(d); setTeamLoading(false); })
-      .catch(() => setTeamLoading(false));
+  const loadTeams = useCallback(() => {
+    setTeamLoading(true);
+    return fetchTeamData()
+      .then((result) => {
+        setTeamData(result.data);
+        setTeamSource(result.source);
+        setTeamFetchedAt(result.fetchedAt);
+        setTeamError(null);
+      })
+      .catch((err: Error) => {
+        setTeamData(null);
+        setTeamError(err.message);
+      })
+      .finally(() => setTeamLoading(false));
   }, []);
+
+  useEffect(() => {
+    void loadTeams();
+  }, [loadTeams]);
 
   const saveTeams = useCallback((ids: number[]) => {
     setMyTeams(ids);
@@ -89,6 +106,9 @@ export function useTeams() {
   return {
     teamData,
     teamLoading,
+    teamError,
+    teamSource,
+    teamFetchedAt,
     showPicker,
     setShowPicker,
     myTeams,
@@ -97,5 +117,6 @@ export function useTeams() {
     myTeamIdSet,
     teamColorMap,
     myTeamDateMap,
+    reloadTeams: loadTeams,
   };
 }

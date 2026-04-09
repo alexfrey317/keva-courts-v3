@@ -14,6 +14,8 @@ const INITIAL_STATE: GameState = {
   vbStart: {},
   rawGames: [],
   updatedAt: '',
+  source: null,
+  fetchedAt: '',
 };
 
 export function useGameData(dateStr: string, myTeamIds: Set<number> | null) {
@@ -24,12 +26,15 @@ export function useGameData(dateStr: string, myTeamIds: Set<number> | null) {
   const fetchDay = useCallback(() => {
     return Promise.all([fetchGames(dateStr), fetchAllDayEvents(dateStr)])
       .then(([raw, allEvts]) => {
-        const games = parseGames(raw);
+        const games = parseGames(raw.data);
         const courts = discoverCourts(games);
         const grid = buildGrid(games, courts, slots, myTeamIds);
-        const ct3bb = hasCourt3Basketball(raw);
+        const ct3bb = hasCourt3Basketball(raw.data);
         const missing = detectMissingCourts(courts);
-        const vbStart = computeVbStart(allEvts, courts);
+        const vbStart = computeVbStart(allEvts.data, courts);
+        const stamps = [raw.fetchedAt, allEvts.fetchedAt].sort();
+        const fetchedAt = stamps[stamps.length - 1] || new Date().toISOString();
+        const source = raw.source === 'cached' || allEvts.source === 'cached' ? 'cached' : 'live';
 
         setGameState({
           status: 'ok',
@@ -39,7 +44,9 @@ export function useGameData(dateStr: string, myTeamIds: Set<number> | null) {
           missing,
           vbStart,
           rawGames: games,
-          updatedAt: new Date().toLocaleTimeString(),
+          updatedAt: new Date(fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+          source,
+          fetchedAt,
         });
       })
       .catch((e) =>

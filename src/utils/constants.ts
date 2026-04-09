@@ -1,4 +1,4 @@
-export const API_BASE = 'https://apps.daysmartrecreation.com/dash/jsonapi/api/v1';
+export const API_BASE = 'https://api.daysmartrecreation.com/api/v1';
 export const COMPANY = 'keva';
 
 export const VB_RESOURCES: readonly number[] = [3, 4, 5];

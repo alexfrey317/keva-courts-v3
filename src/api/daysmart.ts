@@ -1,43 +1,105 @@
 import { API_BASE, COMPANY, VB_RESOURCES } from '../utils/constants';
-import type { ApiResponse, ApiEvent, Game, TeamData, OpenPlaySession } from '../types';
+import type { ApiResponse, ApiEvent, Game, TeamData, OpenPlaySession, SourceResult, DataSource } from '../types';
 import { toDateStr, parseDayFromLeague } from '../utils/dates';
 import { parseGames, discoverCourts, buildGrid } from '../utils/courts';
 
-async function apiFetch(endpoint: string, params: Record<string, string> = {}): Promise<ApiResponse> {
+interface CacheEntry<T> {
+  fetchedAt: string;
+  data: T;
+}
+
+const CACHE_PREFIX = 'keva-api-cache:v2:';
+
+function buildCacheKey(endpoint: string, params: Record<string, string>): string {
+  const search = new URLSearchParams();
+  search.set('company', COMPANY);
+  Object.entries(params)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([key, value]) => search.set(key, value));
+  return `${CACHE_PREFIX}${endpoint}?${search.toString()}`;
+}
+
+function readCache<T>(key: string): CacheEntry<T> | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as CacheEntry<T>;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache<T>(key: string, data: T, fetchedAt: string): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify({ data, fetchedAt }));
+  } catch {
+    // Ignore quota or storage failures and keep live data flowing.
+  }
+}
+
+function withSource<T>(data: T, source: DataSource, fetchedAt: string): SourceResult<T> {
+  return { data, source, fetchedAt };
+}
+
+function combineSourceMeta(results: Array<{ source: DataSource; fetchedAt: string }>): { source: DataSource; fetchedAt: string } {
+  const stamps = results
+    .map((result) => result.fetchedAt)
+    .sort();
+  return {
+    source: results.some((result) => result.source === 'cached') ? 'cached' : 'live',
+    fetchedAt: stamps[stamps.length - 1] || new Date().toISOString(),
+  };
+}
+
+async function apiFetch(endpoint: string, params: Record<string, string> = {}): Promise<SourceResult<ApiResponse>> {
   const url = new URL(`${API_BASE}/${endpoint}`);
   url.searchParams.set('company', COMPANY);
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
-  const res = await fetch(url.toString(), {
-    headers: { Accept: 'application/vnd.api+json' },
-  });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  const cacheKey = buildCacheKey(endpoint, params);
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { Accept: 'application/vnd.api+json' },
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const json = await res.json() as ApiResponse;
+    const fetchedAt = new Date().toISOString();
+    writeCache(cacheKey, json, fetchedAt);
+    return withSource(json, 'live', fetchedAt);
+  } catch (error) {
+    const cached = readCache<ApiResponse>(cacheKey);
+    if (cached) {
+      return withSource(cached.data, 'cached', cached.fetchedAt);
+    }
+    throw error;
+  }
 }
 
-export async function fetchGames(date: string): Promise<ApiEvent[]> {
+export async function fetchGames(date: string): Promise<SourceResult<ApiEvent[]>> {
   const res = await apiFetch('events', {
     'filter[start_date]': date,
     'filter[event_type_id]': 'g',
     sort: 'start',
     'page[size]': '500',
   });
-  return res.data || [];
+  return withSource(res.data.data || [], res.source, res.fetchedAt);
 }
 
-export async function fetchAllDayEvents(date: string): Promise<ApiEvent[]> {
+export async function fetchAllDayEvents(date: string): Promise<SourceResult<ApiEvent[]>> {
   const res = await apiFetch('events', {
     'filter[start_date]': date,
     sort: 'start',
     'page[size]': '500',
   });
-  return res.data || [];
+  return withSource(res.data.data || [], res.source, res.fetchedAt);
 }
 
-export async function fetchAllOpenPlay(): Promise<OpenPlaySession[]> {
+export async function fetchAllOpenPlay(): Promise<SourceResult<OpenPlaySession[]>> {
   const all: ApiEvent[] = [];
   let page = 1;
+  const pages: Array<{ source: DataSource; fetchedAt: string }> = [];
 
   while (true) {
     const batch = await apiFetch('events', {
@@ -46,13 +108,14 @@ export async function fetchAllOpenPlay(): Promise<OpenPlaySession[]> {
       'page[size]': '100',
       'page[number]': String(page),
     });
-    all.push(...(batch.data || []));
-    const meta = batch.meta?.page || {};
+    all.push(...(batch.data.data || []));
+    pages.push({ source: batch.source, fetchedAt: batch.fetchedAt });
+    const meta = batch.data.meta?.page || {};
     if ((meta['current-page'] || 1) >= (meta['last-page'] || 1)) break;
     page++;
   }
 
-  return all
+  const sessions = all
     .filter((e) => /vb|volleyball/i.test(e.attributes.desc || ''))
     .map((e) => {
       const a = e.attributes;
@@ -64,15 +127,19 @@ export async function fetchAllOpenPlay(): Promise<OpenPlaySession[]> {
         res: a.resource_id,
       };
     });
+
+  const meta = combineSourceMeta(pages);
+  return withSource(sessions, meta.source, meta.fetchedAt);
 }
 
-export async function fetchTeamData(): Promise<TeamData> {
+export async function fetchTeamData(): Promise<SourceResult<TeamData>> {
   const seasonBatch = await apiFetch('seasons', { sort: '-id', 'page[size]': '50' });
   const today = toDateStr(new Date());
+  const sources: Array<{ source: DataSource; fetchedAt: string }> = [seasonBatch];
 
   // Find active VB adult season
   let season: ApiEvent | null = null;
-  for (const s of seasonBatch.data || []) {
+  for (const s of seasonBatch.data.data || []) {
     const name = (s.attributes as any).name?.toLowerCase() || '';
     if (!name.includes('vb adult') || name.includes('sand')) continue;
     const st = (s.attributes as any).start_date?.slice(0, 10);
@@ -84,7 +151,7 @@ export async function fetchTeamData(): Promise<TeamData> {
   }
   // Fallback to most recent if no active season
   if (!season) {
-    for (const s of seasonBatch.data || []) {
+    for (const s of seasonBatch.data.data || []) {
       const name = (s.attributes as any).name?.toLowerCase() || '';
       if (name.includes('vb adult') && !name.includes('sand')) {
         season = s;
@@ -93,15 +160,18 @@ export async function fetchTeamData(): Promise<TeamData> {
     }
   }
 
-  if (!season) return { leagues: [], teams: [], teamMap: {} };
+  if (!season) {
+    return withSource({ leagues: [], teams: [], teamMap: {} }, seasonBatch.source, seasonBatch.fetchedAt);
+  }
 
   const leagueBatch = await apiFetch('leagues', {
     'filter[season_id]': season.id,
     'page[size]': '100',
   });
+  sources.push(leagueBatch);
 
   const skip = /waitlist|sub list|canceled/i;
-  const leagues = (leagueBatch.data || [])
+  const leagues = (leagueBatch.data.data || [])
     .filter((l) => !skip.test((l.attributes as any).name))
     .map((l) => ({ id: l.id, name: (l.attributes as any).name as string }));
 
@@ -111,7 +181,8 @@ export async function fetchTeamData(): Promise<TeamData> {
         'filter[league_id]': lg.id,
         'page[size]': '100',
       });
-      return (tb.data || []).map((t) => ({
+      sources.push(tb);
+      return (tb.data.data || []).map((t) => ({
         id: Number(t.id),
         name: (t.attributes as any).name as string,
         leagueId: lg.id,
@@ -146,24 +217,25 @@ export async function fetchTeamData(): Promise<TeamData> {
       dayOrder(a.name) - dayOrder(b.name),
   );
 
-  return {
+  return withSource({
     leagues,
     teams,
     teamMap,
     seasonStart: (season.attributes as any).start_date?.slice(0, 10),
     seasonEnd: (season.attributes as any).end_date?.slice(0, 10),
-  };
+  }, combineSourceMeta(sources).source, combineSourceMeta(sources).fetchedAt);
 }
 
-export async function fetchAllSeasonGames(): Promise<Game[]> {
+export async function fetchAllSeasonGames(): Promise<SourceResult<Game[]>> {
   const first = await apiFetch('events', {
     'filter[event_type_id]': 'g',
     sort: 'start',
     'page[size]': '2000',
     'page[number]': '1',
   });
-  const all = [...(first.data || [])];
-  const totalPages = first.meta?.page?.['last-page'] || 1;
+  const sources: Array<{ source: DataSource; fetchedAt: string }> = [first];
+  const all = [...(first.data.data || [])];
+  const totalPages = first.data.meta?.page?.['last-page'] || 1;
 
   if (totalPages > 1) {
     const remaining = await Promise.all(
@@ -177,22 +249,24 @@ export async function fetchAllSeasonGames(): Promise<Game[]> {
       ),
     );
     for (const batch of remaining) {
-      all.push(...(batch.data || []));
+      sources.push(batch);
+      all.push(...(batch.data.data || []));
     }
   }
 
-  return parseGames(all);
+  const meta = combineSourceMeta(sources);
+  return withSource(parseGames(all), meta.source, meta.fetchedAt);
 }
 
 /** Quick check: how many open slots on a given day */
-export async function fetchDayOpenCount(date: string): Promise<number> {
+export async function fetchDayOpenCount(date: string): Promise<SourceResult<number>> {
   const raw = await fetchGames(date);
-  const games = parseGames(raw);
+  const games = parseGames(raw.data);
   const courts = discoverCourts(games);
-  if (!courts.length) return -1;
+  if (!courts.length) return withSource(-1, raw.source, raw.fetchedAt);
   const dow = new Date(date + 'T12:00:00').getDay();
   const slots = dow === 0
     ? ['15:00', '15:50', '16:40', '17:30', '18:20', '19:10', '20:00', '20:50', '21:40']
     : ['18:00', '18:50', '19:40', '20:30', '21:20', '22:10'];
-  return buildGrid(games, courts, slots, null).openTotal;
+  return withSource(buildGrid(games, courts, slots, null).openTotal, raw.source, raw.fetchedAt);
 }

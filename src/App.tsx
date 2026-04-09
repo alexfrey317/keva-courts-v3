@@ -21,6 +21,8 @@ import { Callouts } from './components/GameGrid/Callouts';
 import { OpenPlayView } from './components/OpenPlay/OpenPlayView';
 import { NextGameCard } from './components/Common/NextGameCard';
 import { Loading } from './components/Common/Loading';
+import { SourceBanner } from './components/Common/SourceBanner';
+import { QuickStartCard } from './components/Common/QuickStartCard';
 
 // Lazy-loaded components (not needed on initial render)
 const SeasonSchedule = lazy(() => import('./components/Season/SeasonSchedule').then(m => ({ default: m.SeasonSchedule })));
@@ -72,8 +74,9 @@ export function App() {
 
   // ── Teams ──
   const {
-    teamData, teamLoading, showPicker, setShowPicker,
+    teamData, teamLoading, teamError, teamSource, teamFetchedAt, showPicker, setShowPicker,
     myTeams, saveTeams, myTeamObjs, myTeamIdSet, teamColorMap, myTeamDateMap,
+    reloadTeams,
   } = useTeams();
 
   // ── Game data ──
@@ -81,25 +84,45 @@ export function App() {
   const myIds = mode === 'myteam' && myTeamIdSet.size > 0 ? myTeamIdSet : null;
   const { gameState, refetch } = useGameData(dateStr, myIds);
 
+  // ── Open play ──
+  const {
+    sessions: opSessions,
+    loading: opLoading,
+    error: opError,
+    source: opSource,
+    fetchedAt: opFetchedAt,
+    opDates,
+    todaySessions: todayOp,
+    reload: reloadOpenPlay,
+  } = useOpenPlay(dateStr);
+
+  // ── Season data ──
+  const {
+    allSeasonGames,
+    loading: seasonLoading,
+    error: seasonError,
+    source: seasonSource,
+    fetchedAt: seasonFetchedAt,
+    reload: reloadSeason,
+  } = useSeasonData(myTeams.length > 0);
+
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
     const startedAt = Date.now();
     setRefreshing(true);
 
     try {
-      await refetch();
+      const jobs: Promise<unknown>[] = [reloadTeams()];
+      if (mode === 'games' || mode === 'myteam') jobs.push(refetch());
+      if (mode === 'openplay') jobs.push(reloadOpenPlay());
+      if (mode === 'season' && myTeams.length > 0) jobs.push(reloadSeason());
+      await Promise.allSettled(jobs);
     } finally {
       const minVisibleMs = 650;
       const remainingMs = Math.max(0, minVisibleMs - (Date.now() - startedAt));
       window.setTimeout(() => setRefreshing(false), remainingMs);
     }
-  }, [refetch, refreshing]);
-
-  // ── Open play ──
-  const { sessions: opSessions, loading: opLoading, opDates, todaySessions: todayOp } = useOpenPlay(dateStr);
-
-  // ── Season data ──
-  const allSeasonGames = useSeasonData(myTeams.length > 0);
+  }, [mode, myTeams.length, refetch, refreshing, reloadOpenPlay, reloadSeason, reloadTeams]);
 
   // ── Calendar dots ──
   const getDots = useCalendarDots(calYear, calMonth, weekStart, mode, opDates, myTeamDateMap, teamColorMap, theme, allSeasonGames, myTeamIdSet);
@@ -111,6 +134,80 @@ export function App() {
   const myGamesToday = gameState.status === 'ok'
     ? gameState.grid.rows.reduce((n, r) => n + r.cells.filter((c) => c.myGame).length, 0)
     : 0;
+
+  type BannerState = { kind: 'live' | 'cached' | 'unavailable'; fetchedAt?: string };
+
+  const combineBanners = (items: Array<BannerState | null>): BannerState | null => {
+    const active = items.filter(Boolean) as BannerState[];
+    if (!active.length) return null;
+    if (active.some((item) => item.kind === 'unavailable')) return { kind: 'unavailable' };
+    const stamps = active
+      .map((item) => item.fetchedAt)
+      .filter(Boolean)
+      .sort();
+    return {
+      kind: active.some((item) => item.kind === 'cached') ? 'cached' : 'live',
+      fetchedAt: stamps[stamps.length - 1],
+    };
+  };
+
+  const teamBannerState: BannerState | null = teamData
+    ? { kind: teamSource === 'cached' ? 'cached' : 'live', fetchedAt: teamFetchedAt }
+    : teamError
+      ? { kind: 'unavailable' }
+      : null;
+
+  const gameBannerState: BannerState | null = gameState.status === 'ok'
+    ? { kind: gameState.source === 'cached' ? 'cached' : 'live', fetchedAt: gameState.fetchedAt }
+    : gameState.status === 'error'
+      ? { kind: 'unavailable' }
+      : null;
+
+  const openPlayBannerState: BannerState | null = opSessions
+    ? { kind: opSource === 'cached' ? 'cached' : 'live', fetchedAt: opFetchedAt }
+    : opError
+      ? { kind: 'unavailable' }
+      : null;
+
+  const seasonBannerState: BannerState | null = allSeasonGames
+    ? { kind: seasonSource === 'cached' ? 'cached' : 'live', fetchedAt: seasonFetchedAt }
+    : seasonError
+      ? { kind: 'unavailable' }
+      : null;
+
+  const activeBanner = (() => {
+    if (mode === 'games') return gameBannerState;
+    if (mode === 'openplay') return openPlayBannerState;
+    if (mode === 'myteam') return myTeamObjs.length > 0 ? combineBanners([teamBannerState, gameBannerState]) : teamBannerState;
+    if (mode === 'season') return myTeamObjs.length > 0 ? combineBanners([teamBannerState, seasonBannerState]) : teamBannerState;
+    if (mode === 'notifications') return myTeams.length > 0 ? teamBannerState : null;
+    return null;
+  })();
+
+  const renderTeamSetupPrompt = (copy: string) => {
+    if (teamLoading) return <Loading />;
+
+    if (teamError || !teamData) {
+      return (
+        <div className="info-card error">
+          <h2>Team list unavailable</h2>
+          <p>My Teams and Season views need the DaySmart team directory before they can load.</p>
+          <button className="retry-btn" onClick={() => void reloadTeams()}>
+            Retry team list
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="select-prompt">
+        <p>{copy}</p>
+        <button className="select-btn" onClick={() => setShowPicker(true)}>
+          Select Your Teams
+        </button>
+      </div>
+    );
+  };
 
   // ── Team banner (shared between sidebar and tabs) ──
   const renderTeamBanner = (showEditBtn: boolean) => (
@@ -153,6 +250,7 @@ export function App() {
       </header>
 
       <ModeToggle mode={mode} onChange={setMode} />
+      {activeBanner && <SourceBanner kind={activeBanner.kind} fetchedAt={activeBanner.fetchedAt} />}
 
       <div className="wide-layout">
         {/* ── Sidebar (desktop) ── */}
@@ -202,6 +300,17 @@ export function App() {
           {/* Games tab */}
           {mode === 'games' && (
             <>
+              {myTeams.length === 0 && (
+                <QuickStartCard
+                  canPickTeams={!teamLoading && !!teamData}
+                  onPickTeams={() => setShowPicker(true)}
+                  onShowTonight={() => {
+                    setDateStr(getDefaultDate());
+                    setMode('games');
+                  }}
+                  onOpenAlerts={() => setMode('notifications')}
+                />
+              )}
               {gameState.status === 'loading' && <Loading />}
               {gameState.status === 'ok' && (
                 <>
@@ -232,17 +341,18 @@ export function App() {
                     </>
                   )}
                   <div className="status">
-                    Live data &middot; updated {gameState.updatedAt}
+                    {gameState.source === 'cached' ? 'Saved data' : 'Live data'} &middot; updated {gameState.updatedAt}
                     {isToday(dateStr) && ' \u00b7 auto-refresh 3m'}
                   </div>
                 </>
               )}
               {gameState.status === 'error' && (
-                <div className="summary not-scheduled">
-                  <span className="count">Temporarily unavailable</span>
-                  <span className="label">
-                    KEVA's scheduling servers (DaySmart) appear to be down. This usually resolves on its own — try again in a few minutes.
-                  </span>
+                <div className="info-card error">
+                  <h2>Schedule temporarily unavailable</h2>
+                  <p>KEVA&apos;s DaySmart schedule is not responding right now.</p>
+                  <button className="retry-btn" onClick={() => void handleRefresh()}>
+                    Try again
+                  </button>
                 </div>
               )}
             </>
@@ -252,9 +362,20 @@ export function App() {
           {mode === 'openplay' && (
             <>
               {opLoading && <Loading />}
-              {opSessions && <OpenPlayView sessions={todayOp} allSessions={opSessions} />}
+              {opSessions && <OpenPlayView selectedDate={dateStr} sessions={todayOp} allSessions={opSessions} />}
+              {!opLoading && opError && (
+                <div className="info-card error">
+                  <h2>Open play temporarily unavailable</h2>
+                  <p>The open play feed did not load this time.</p>
+                  <button className="retry-btn" onClick={() => void reloadOpenPlay()}>
+                    Retry open play
+                  </button>
+                </div>
+              )}
               {opSessions && (
-                <div className="status">Live data &middot; {opSessions.length} sessions loaded</div>
+                <div className="status">
+                  {opSource === 'cached' ? 'Saved data' : 'Live data'} &middot; {opSessions.length} sessions loaded
+                </div>
               )}
             </>
           )}
@@ -263,16 +384,7 @@ export function App() {
           {mode === 'myteam' && (
             <>
               {!myTeamObjs.length && (
-                <div className="select-prompt">
-                  <p>Pick your teams to see your game schedule highlighted on the court grid</p>
-                  <button
-                    className="select-btn"
-                    onClick={() => setShowPicker(true)}
-                    disabled={teamLoading}
-                  >
-                    {teamLoading ? 'Loading teams...' : 'Select Your Teams'}
-                  </button>
-                </div>
+                renderTeamSetupPrompt('Pick your teams to see your game schedule highlighted on the court grid.')
               )}
               {myTeamObjs.length > 0 && (
                 <>
@@ -335,10 +447,19 @@ export function App() {
                         <div className="summary no-games">Your team doesn't play this day</div>
                       )}
                       <div className="status">
-                        Live data &middot; updated {gameState.updatedAt}
+                        {gameState.source === 'cached' ? 'Saved data' : 'Live data'} &middot; updated {gameState.updatedAt}
                         {isToday(dateStr) && ' \u00b7 auto-refresh 3m'}
                       </div>
                     </>
+                  )}
+                  {gameState.status === 'error' && (
+                    <div className="info-card error">
+                      <h2>My Teams schedule unavailable</h2>
+                      <p>Team highlighting is ready, but the live court sheet did not load.</p>
+                      <button className="retry-btn" onClick={() => void refetch()}>
+                        Retry courts
+                      </button>
+                    </div>
                   )}
                 </>
               )}
@@ -349,20 +470,12 @@ export function App() {
           {mode === 'season' && (
             <>
               {!myTeamObjs.length && (
-                <div className="select-prompt">
-                  <p>Pick your teams to see season schedule and standings</p>
-                  <button
-                    className="select-btn"
-                    onClick={() => setShowPicker(true)}
-                    disabled={teamLoading}
-                  >
-                    {teamLoading ? 'Loading teams...' : 'Select Your Teams'}
-                  </button>
-                </div>
+                renderTeamSetupPrompt('Pick your teams to see your full season schedule and standings.')
               )}
               {myTeamObjs.length > 0 && (
                 <>
                   {renderTeamBanner(true)}
+                  {seasonLoading && <Loading />}
                   {allSeasonGames ? (
                     <Suspense fallback={<Loading />}>
                       <SeasonSchedule
@@ -380,6 +493,14 @@ export function App() {
                         myTeamIds={myTeamIdSet}
                       />
                     </Suspense>
+                  ) : seasonError ? (
+                    <div className="info-card error">
+                      <h2>Season data temporarily unavailable</h2>
+                      <p>The season schedule and standings feed did not load this time.</p>
+                      <button className="retry-btn" onClick={() => void reloadSeason()}>
+                        Retry season data
+                      </button>
+                    </div>
                   ) : (
                     <Loading />
                   )}
