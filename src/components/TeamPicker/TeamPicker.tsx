@@ -1,17 +1,38 @@
 import { useState, useMemo } from 'react';
-import type { League, Team } from '../../types';
+import type { League, Team, Theme, TeamColorOverrideMap } from '../../types';
+import { TEAM_COLORS } from '../../utils/constants';
+import { getTeamColor } from '../../utils/theme';
 
 interface TeamPickerProps {
   leagues: League[];
   teams: Team[];
   selectedIds: number[];
-  onDone: (ids: number[]) => void;
+  selectedColors: Map<number, number>;
+  colorOverrides: TeamColorOverrideMap;
+  theme: Theme;
+  onDone: (ids: number[], colorOverrides: TeamColorOverrideMap) => void;
   onClose: () => void;
 }
 
-export function TeamPicker({ leagues, teams, selectedIds, onDone, onClose }: TeamPickerProps) {
+export function TeamPicker({
+  leagues,
+  teams,
+  selectedIds,
+  selectedColors,
+  colorOverrides: initialOverrides,
+  theme,
+  onDone,
+  onClose,
+}: TeamPickerProps) {
   const [selected, setSelected] = useState(() => new Set(selectedIds));
+  const [colorOverrides, setColorOverrides] = useState<TeamColorOverrideMap>(() => ({ ...initialOverrides }));
   const [query, setQuery] = useState('');
+
+  const teamMap = useMemo(() => {
+    const map = new Map<number, Team>();
+    for (const team of teams) map.set(team.id, team);
+    return map;
+  }, [teams]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Team[]>();
@@ -32,6 +53,30 @@ export function TeamPicker({ leagues, teams, selectedIds, onDone, onClose }: Tea
     );
   }, [query, teams]);
 
+  const selectedOrder = useMemo(() => [...selected], [selected]);
+  const selectedTeams = useMemo(
+    () => selectedOrder.map((id) => teamMap.get(id)).filter((team): team is Team => Boolean(team)),
+    [selectedOrder, teamMap],
+  );
+
+  const getColorIndex = (teamId: number): number => {
+    if (colorOverrides[teamId] !== undefined) return colorOverrides[teamId];
+    const existing = selectedColors.get(teamId);
+    if (existing !== undefined) return existing;
+    const orderIndex = selectedOrder.indexOf(teamId);
+    return orderIndex >= 0 ? orderIndex : 0;
+  };
+
+  const getSelectedStyle = (teamId: number) => {
+    if (!selected.has(teamId)) return undefined;
+    const color = getTeamColor(getColorIndex(teamId), theme);
+    return {
+      background: color.bg1,
+      color: color.t,
+      border: `1px solid ${color.b}`,
+    };
+  };
+
   function toggle(id: number) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -42,8 +87,40 @@ export function TeamPicker({ leagues, teams, selectedIds, onDone, onClose }: Tea
   }
 
   function done() {
-    onDone([...selected]);
+    onDone([...selected], colorOverrides);
     onClose();
+  }
+
+  function setColor(teamId: number, colorIndex: number) {
+    setColorOverrides((prev) => ({ ...prev, [teamId]: colorIndex }));
+  }
+
+  function resetColor(teamId: number) {
+    setColorOverrides((prev) => {
+      const next = { ...prev };
+      delete next[teamId];
+      return next;
+    });
+  }
+
+  function renderTeamButton(tm: Team, showLeague: boolean) {
+    const selectedStyle = getSelectedStyle(tm.id);
+    const leagueColor = selected.has(tm.id)
+      ? getTeamColor(getColorIndex(tm.id), theme).b
+      : 'var(--muted)';
+    return (
+      <button
+        type="button"
+        key={tm.id}
+        className={'picker-team' + (selected.has(tm.id) ? ' sel' : '')}
+        onClick={() => toggle(tm.id)}
+        style={selectedStyle}
+      >
+        {selected.has(tm.id) ? '\u2713 ' : ''}
+        {tm.name}{' '}
+        {showLeague && <span style={{ fontSize: '.7rem', color: leagueColor }}>{tm.leagueName}</span>}
+      </button>
+    );
   }
 
   return (
@@ -78,37 +155,71 @@ export function TeamPicker({ leagues, teams, selectedIds, onDone, onClose }: Tea
           />
         </div>
 
+        {selectedTeams.length > 0 && (
+          <div className="picker-colors">
+            <div className="picker-colors-title">Team Colors</div>
+            <div className="picker-color-list">
+              {selectedTeams.map((team) => {
+                const colorIndex = getColorIndex(team.id);
+                const activeColor = getTeamColor(colorIndex, theme);
+                const usingDefault = colorOverrides[team.id] === undefined;
+
+                return (
+                  <div key={team.id} className="picker-color-card">
+                    <div className="picker-color-head">
+                      <div>
+                        <div className="picker-color-name" style={{ color: activeColor.t }}>{team.name}</div>
+                        <div className="picker-color-league">{team.leagueName}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="picker-color-reset"
+                        disabled={usingDefault}
+                        onClick={() => resetColor(team.id)}
+                      >
+                        Auto
+                      </button>
+                    </div>
+                    <div className="picker-swatch-row">
+                      {TEAM_COLORS.map((_, idx) => {
+                        const swatch = getTeamColor(idx, theme);
+                        const active = colorIndex === idx;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={'picker-swatch' + (active ? ' active' : '')}
+                            aria-label={`Set ${team.name} color ${idx + 1}`}
+                            onClick={() => setColor(team.id, idx)}
+                            style={{
+                              background: `linear-gradient(135deg, ${swatch.bg1}, ${swatch.bg2})`,
+                              borderColor: swatch.b,
+                              color: swatch.t,
+                              boxShadow: active ? `0 0 0 2px ${swatch.b}55` : undefined,
+                            }}
+                          >
+                            {active ? '\u2713' : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="picker-list">
           {filtered
-            ? filtered.map((tm) => (
-                <button
-                  type="button"
-                  key={tm.id}
-                  className={'picker-team' + (selected.has(tm.id) ? ' sel' : '')}
-                  onClick={() => toggle(tm.id)}
-                >
-                  {selected.has(tm.id) ? '\u2713 ' : ''}
-                  {tm.name}{' '}
-                  <span style={{ fontSize: '.7rem', color: 'var(--muted)' }}>{tm.leagueName}</span>
-                </button>
-              ))
+            ? filtered.map((tm) => renderTeamButton(tm, true))
             : leagues.map((lg) => {
                 const t = grouped.get(lg.id) || [];
                 if (!t.length) return null;
                 return (
                   <div key={lg.id}>
                     <div className="picker-league-name">{lg.name}</div>
-                    {t.map((tm) => (
-                      <button
-                        type="button"
-                        key={tm.id}
-                        className={'picker-team' + (selected.has(tm.id) ? ' sel' : '')}
-                        onClick={() => toggle(tm.id)}
-                      >
-                        {selected.has(tm.id) ? '\u2713 ' : ''}
-                        {tm.name}
-                      </button>
-                    ))}
+                    {t.map((tm) => renderTeamButton(tm, false))}
                   </div>
                 );
               })}

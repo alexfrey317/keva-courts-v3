@@ -1370,6 +1370,79 @@ input:checked + .notif-switch::after {
   flex-shrink: 0;
   border-bottom: 1px solid var(--panel-b);
 }
+.picker-colors {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--panel-b);
+  flex-shrink: 0;
+}
+.picker-colors-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.picker-color-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.picker-color-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-b);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.picker-color-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.picker-color-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.picker-color-league {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.picker-color-reset {
+  background: none;
+  border: 1px solid var(--panel-b);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.picker-color-reset:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.picker-swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.picker-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.picker-swatch.active {
+  transform: scale(1.06);
+}
 .picker-search {
   width: 100%;
   padding: 10px 14px;
@@ -1415,7 +1488,7 @@ input:checked + .notif-switch::after {
   width: 100%;
   text-align: left;
   background: none;
-  border: none;
+  border: 1px solid transparent;
 }
 .picker-team:active {
   background: var(--panel-hover);

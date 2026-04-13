@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Team, TeamData, DataSource } from '../types';
+import type { Team, TeamData, DataSource, TeamColorOverrideMap } from '../types';
 import { fetchTeamData } from '../api/daysmart';
-import { getTeamColor } from '../utils/theme';
 import { parseDayFromLeague, toDateStr } from '../utils/dates';
-import type { Theme, TeamColor } from '../types';
+
+const TEAM_COLOR_KEY = 'keva-team-colors';
 
 function readTeamsFromUrl(): number[] {
   const qt = new URLSearchParams(window.location.search).get('teams');
@@ -29,6 +29,34 @@ function writeTeams(ids: number[]): void {
   window.history.replaceState(null, '', url.toString());
 }
 
+function readTeamColorOverrides(): TeamColorOverrideMap {
+  try {
+    const raw = localStorage.getItem(TEAM_COLOR_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const overrides: TeamColorOverrideMap = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      const teamId = Number(key);
+      const colorIndex = Number(value);
+      if (Number.isInteger(teamId) && teamId > 0 && Number.isInteger(colorIndex) && colorIndex >= 0) {
+        overrides[teamId] = colorIndex;
+      }
+    }
+    return overrides;
+  } catch {
+    return {};
+  }
+}
+
+function writeTeamColorOverrides(overrides: TeamColorOverrideMap): void {
+  try {
+    if (Object.keys(overrides).length) localStorage.setItem(TEAM_COLOR_KEY, JSON.stringify(overrides));
+    else localStorage.removeItem(TEAM_COLOR_KEY);
+  } catch {
+    // Ignore storage failures and keep in-memory state working.
+  }
+}
+
 export function useTeams() {
   const [teamData, setTeamData] = useState<TeamData | null>(null);
   const [teamLoading, setTeamLoading] = useState(true);
@@ -36,6 +64,7 @@ export function useTeams() {
   const [teamSource, setTeamSource] = useState<DataSource | null>(null);
   const [teamFetchedAt, setTeamFetchedAt] = useState('');
   const [showPicker, setShowPicker] = useState(false);
+  const [teamColorOverrides, setTeamColorOverrides] = useState<TeamColorOverrideMap>(readTeamColorOverrides);
   const [myTeams, setMyTeams] = useState<number[]>(() => {
     const teams = readTeamsFromUrl();
     if (teams.length) writeTeams(teams);
@@ -62,10 +91,13 @@ export function useTeams() {
     void loadTeams();
   }, [loadTeams]);
 
-  const saveTeams = useCallback((ids: number[]) => {
+  const saveTeams = useCallback((ids: number[], overrides?: TeamColorOverrideMap) => {
     setMyTeams(ids);
     writeTeams(ids);
-  }, []);
+    const nextOverrides = overrides ?? teamColorOverrides;
+    setTeamColorOverrides(nextOverrides);
+    writeTeamColorOverrides(nextOverrides);
+  }, [teamColorOverrides]);
 
   const myTeamObjs = useMemo<Team[]>(() => {
     if (!teamData) return [];
@@ -76,9 +108,9 @@ export function useTeams() {
 
   const teamColorMap = useMemo(() => {
     const m = new Map<number, number>();
-    myTeams.forEach((id, i) => m.set(id, i));
+    myTeams.forEach((id, i) => m.set(id, teamColorOverrides[id] ?? i));
     return m;
-  }, [myTeams]);
+  }, [myTeams, teamColorOverrides]);
 
   /** Map of dateStr -> team IDs that play on that date */
   const myTeamDateMap = useMemo(() => {
@@ -115,6 +147,7 @@ export function useTeams() {
     saveTeams,
     myTeamObjs,
     myTeamIdSet,
+    teamColorOverrides,
     teamColorMap,
     myTeamDateMap,
     reloadTeams: loadTeams,

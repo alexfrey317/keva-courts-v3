@@ -75,7 +75,7 @@ export function App() {
   // ── Teams ──
   const {
     teamData, teamLoading, teamError, teamSource, teamFetchedAt, showPicker, setShowPicker,
-    myTeams, saveTeams, myTeamObjs, myTeamIdSet, teamColorMap, myTeamDateMap,
+    myTeams, saveTeams, myTeamObjs, myTeamIdSet, teamColorOverrides, teamColorMap, myTeamDateMap,
     reloadTeams,
   } = useTeams();
 
@@ -125,7 +125,7 @@ export function App() {
   }, [mode, myTeams.length, refetch, refreshing, reloadOpenPlay, reloadSeason, reloadTeams]);
 
   // ── Calendar dots ──
-  const getDots = useCalendarDots(calYear, calMonth, weekStart, mode, opDates, myTeamDateMap, teamColorMap, theme, allSeasonGames, myTeamIdSet);
+  const getDots = useCalendarDots(calYear, calMonth, weekStart, mode, opDates, teamColorMap, theme, allSeasonGames, myTeamIdSet);
 
   // ── Notifications ──
   const notif = useNotifications(myTeams);
@@ -534,6 +534,9 @@ export function App() {
           leagues={teamData.leagues}
           teams={teamData.teams}
           selectedIds={myTeams}
+          selectedColors={teamColorMap}
+          colorOverrides={teamColorOverrides}
+          theme={theme}
           onDone={saveTeams}
           onClose={() => setShowPicker(false)}
         /></Suspense>

@@ -142,6 +142,8 @@ export interface TeamColor {
   b: string;
 }
 
+export type TeamColorOverrideMap = Record<number, number>;
+
 // Calendar day
 export interface CalendarDay {
   day: number;
