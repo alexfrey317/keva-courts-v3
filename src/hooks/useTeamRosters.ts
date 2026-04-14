@@ -13,10 +13,7 @@ interface WorkerRosterPayload {
 
 export function useTeamRosters(teamIds: number[]): TeamRosterMap {
   const [rosters, setRosters] = useState<TeamRosterMap>({});
-  const key = useMemo(
-    () => [...new Set(teamIds)].sort((a, b) => a - b).join(','),
-    [teamIds.join(',')],
-  );
+  const key = useMemo(() => [...new Set(teamIds)].sort((a, b) => a - b).join(','), [teamIds.join(',')]);
 
   useEffect(() => {
     if (!key) {
@@ -26,7 +23,7 @@ export function useTeamRosters(teamIds: number[]): TeamRosterMap {
 
     let cancelled = false;
 
-    fetch(`${WORKER_URL}/rosters?teamIds=${encodeURIComponent(key)}`)
+    fetch(`${WORKER_URL}/rosters`)
       .then(async (response) => {
         if (!response.ok) return;
         const payload = await response.json() as WorkerRosterPayload;

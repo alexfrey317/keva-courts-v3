@@ -130,6 +130,11 @@ export function SeasonSchedule({
                 className={'sched-row' + (isPastGame(g.date, g.time) ? ' past-game' : '')}
                 style={cc ? { borderColor: cc.b } : {}}
               >
+                <div className="sched-team-line">
+                  <span className="sr-vs">
+                    vs <TeamRosterName teamId={g.oppId} name={opp} rosters={rosters} />
+                  </span>
+                </div>
                 <button
                   type="button"
                   className="sched-main"
@@ -137,9 +142,6 @@ export function SeasonSchedule({
                 >
                   <span className="sr-date">
                     {formatShort(g.date)} {formatTime12(g.time)}
-                  </span>
-                  <span className="sr-vs">
-                    vs <TeamRosterName teamId={g.oppId} name={opp} rosters={rosters} />
                   </span>
                 </button>
                 <div className="sched-side">
