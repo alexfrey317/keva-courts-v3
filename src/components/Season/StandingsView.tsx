@@ -64,8 +64,10 @@ export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, roster
       })}
       {activeRecord && (
         <RecordBreakdownModal
+          teamId={activeRecord.teamId}
           teamName={teamMap[activeRecord.teamId]?.name || 'Team'}
           breakdown={activeRecord}
+          rosters={rosters}
           onClose={() => setActiveRecordTeamId(null)}
         />
       )}

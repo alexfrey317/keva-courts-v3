@@ -138,7 +138,9 @@ export function SeasonSchedule({
                   <span className="sr-date">
                     {formatShort(g.date)} {formatTime12(g.time)}
                   </span>
-                  <span className="sr-vs">vs {opp}</span>
+                  <span className="sr-vs">
+                    vs <TeamRosterName teamId={g.oppId} name={opp} rosters={rosters} />
+                  </span>
                 </button>
                 <div className="sched-side">
                   <button
@@ -162,8 +164,10 @@ export function SeasonSchedule({
       </div>
       {activeRecord && (
         <RecordBreakdownModal
+          teamId={activeRecord.teamId}
           teamName={teamMap[activeRecord.teamId]?.name || 'Team'}
           breakdown={activeRecord}
+          rosters={rosters}
           onClose={() => setActiveRecordTeamId(null)}
         />
       )}

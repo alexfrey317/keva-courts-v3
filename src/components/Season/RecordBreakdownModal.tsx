@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import type { TeamRecordBreakdown } from '../../types';
+import type { TeamRecordBreakdown, TeamRosterMap } from '../../types';
 import { formatShort, formatTime12 } from '../../utils/dates';
+import { TeamRosterName } from '../Common/TeamRosterName';
 
 interface RecordBreakdownModalProps {
+  teamId: number;
   teamName: string;
   breakdown: TeamRecordBreakdown;
+  rosters: TeamRosterMap;
   onClose: () => void;
 }
 
@@ -13,11 +16,13 @@ function BreakdownSection({
   entries,
   emptyCopy,
   tone,
+  rosters,
 }: {
   title: string;
   entries: TeamRecordBreakdown['wins'];
   emptyCopy: string;
   tone: 'win' | 'loss';
+  rosters: TeamRosterMap;
 }) {
   const [activeEntryKey, setActiveEntryKey] = useState<string | null>(null);
 
@@ -32,7 +37,9 @@ function BreakdownSection({
               className="record-entry"
               onMouseLeave={() => setActiveEntryKey((current) => (current === `${tone}-${entry.id}` ? null : current))}
             >
-              <span className="record-entry-name">{entry.name}</span>
+              <span className="record-entry-name">
+                <TeamRosterName teamId={entry.id} name={entry.name} rosters={rosters} />
+              </span>
               <div className="record-entry-meta">
                 <button
                   type="button"
@@ -70,7 +77,7 @@ function BreakdownSection({
   );
 }
 
-export function RecordBreakdownModal({ teamName, breakdown, onClose }: RecordBreakdownModalProps) {
+export function RecordBreakdownModal({ teamId, teamName, breakdown, rosters, onClose }: RecordBreakdownModalProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -92,7 +99,7 @@ export function RecordBreakdownModal({ teamName, breakdown, onClose }: RecordBre
         <div className="record-header">
           <div>
             <div className="record-kicker">Record Breakdown</div>
-            <h3>{teamName}</h3>
+            <h3><TeamRosterName teamId={teamId} name={teamName} rosters={rosters} /></h3>
           </div>
           <button type="button" className="record-close" onClick={onClose}>
             Close
@@ -110,12 +117,14 @@ export function RecordBreakdownModal({ teamName, breakdown, onClose }: RecordBre
             entries={breakdown.wins}
             emptyCopy="No completed wins yet."
             tone="win"
+            rosters={rosters}
           />
           <BreakdownSection
             title="Lost Against"
             entries={breakdown.losses}
             emptyCopy="No completed losses yet."
             tone="loss"
+            rosters={rosters}
           />
         </div>
       </div>

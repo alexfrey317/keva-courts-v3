@@ -296,6 +296,7 @@ export function App() {
                   myTeamIds={myTeamIdSet}
                   teamColorMap={teamColorMap}
                   teamMap={teamData?.teamMap}
+                  rosters={rosters}
                   theme={theme}
                   dateStr={dateStr}
                   onGo={navigateToMyTeam}
@@ -407,6 +408,7 @@ export function App() {
                     myTeamIds={myTeamIdSet}
                     teamColorMap={teamColorMap}
                     teamMap={teamData?.teamMap}
+                    rosters={rosters}
                     theme={theme}
                     dateStr={dateStr}
                     onGo={navigateToMyTeam}
