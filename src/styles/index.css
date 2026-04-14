@@ -1864,6 +1864,11 @@ input:checked + .notif-switch::after {
   color: var(--heading);
   font-size: 0.86rem;
 }
+.record-entry-meta {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
 .record-entry-count {
   min-width: 24px;
   text-align: center;
@@ -1874,6 +1879,38 @@ input:checked + .notif-switch::after {
   font-size: 0.72rem;
   font-weight: 700;
   padding: 3px 7px;
+  cursor: pointer;
+}
+.record-entry-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 148px;
+  max-width: 220px;
+  background: var(--bg);
+  border: 1px solid var(--panel-b);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  z-index: 1;
+}
+.record-entry-popover-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+.record-entry-times {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.record-entry-time {
+  color: var(--heading);
+  font-size: 0.78rem;
+  white-space: nowrap;
 }
 .record-empty {
   color: var(--muted);

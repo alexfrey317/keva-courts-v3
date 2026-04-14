@@ -174,16 +174,31 @@ export function computeRecordBreakdown(
     if (my > th) {
       w++;
       const prev = wins.get(oppId);
-      wins.set(oppId, { id: oppId, name: oppName, count: (prev?.count || 0) + 1 });
+      wins.set(oppId, {
+        id: oppId,
+        name: oppName,
+        count: (prev?.count || 0) + 1,
+        games: [...(prev?.games || []), { date: g.date, time: g.start }],
+      });
     } else if (th > my) {
       l++;
       const prev = losses.get(oppId);
-      losses.set(oppId, { id: oppId, name: oppName, count: (prev?.count || 0) + 1 });
+      losses.set(oppId, {
+        id: oppId,
+        name: oppName,
+        count: (prev?.count || 0) + 1,
+        games: [...(prev?.games || []), { date: g.date, time: g.start }],
+      });
     }
   }
 
   const sortEntries = (entries: Iterable<RecordBreakdownEntry>) =>
-    [...entries].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    [...entries]
+      .map((entry) => ({
+        ...entry,
+        games: [...entry.games].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
+      }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
   return {
     teamId,

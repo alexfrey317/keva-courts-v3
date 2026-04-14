@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { TeamRecordBreakdown } from '../../types';
+import { formatShort, formatTime12 } from '../../utils/dates';
 
 interface RecordBreakdownModalProps {
   teamName: string;
@@ -18,15 +19,47 @@ function BreakdownSection({
   emptyCopy: string;
   tone: 'win' | 'loss';
 }) {
+  const [activeEntryKey, setActiveEntryKey] = useState<string | null>(null);
+
   return (
     <div className="record-section">
       <div className={'record-section-title ' + tone}>{title}</div>
       {entries.length > 0 ? (
         <div className="record-entry-list">
           {entries.map((entry) => (
-            <div key={entry.id} className="record-entry">
+            <div
+              key={entry.id}
+              className="record-entry"
+              onMouseLeave={() => setActiveEntryKey((current) => (current === `${tone}-${entry.id}` ? null : current))}
+            >
               <span className="record-entry-name">{entry.name}</span>
-              <span className="record-entry-count">{entry.count}</span>
+              <div className="record-entry-meta">
+                <button
+                  type="button"
+                  className="record-entry-count"
+                  aria-label={`Show ${entry.name} ${title.toLowerCase()} game times`}
+                  onMouseEnter={() => setActiveEntryKey(`${tone}-${entry.id}`)}
+                  onFocus={() => setActiveEntryKey(`${tone}-${entry.id}`)}
+                  onBlur={() => setActiveEntryKey((current) => (current === `${tone}-${entry.id}` ? null : current))}
+                  onClick={() =>
+                    setActiveEntryKey((current) => (current === `${tone}-${entry.id}` ? null : `${tone}-${entry.id}`))
+                  }
+                >
+                  {entry.count}
+                </button>
+                {activeEntryKey === `${tone}-${entry.id}` && (
+                  <div className="record-entry-popover" role="status">
+                    <div className="record-entry-popover-title">Game times</div>
+                    <div className="record-entry-times">
+                      {entry.games.map((game, index) => (
+                        <div key={`${game.date}-${game.time}-${index}`} className="record-entry-time">
+                          {formatShort(game.date)} at {formatTime12(game.time)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
