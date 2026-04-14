@@ -5,7 +5,6 @@ import { getTeamColor } from '../../utils/theme';
 import { generateTeamCalendar, downloadIcs } from '../../utils/calendar';
 import { computeRecord, computeRecordBreakdown } from '../../utils/courts';
 import { RecordBreakdownModal } from './RecordBreakdownModal';
-import { TeamRosterName } from '../Common/TeamRosterName';
 
 interface SeasonScheduleProps {
   allGames: Game[];
@@ -123,18 +122,13 @@ export function SeasonSchedule({
                   className="picker-league-name"
                   style={cc ? { color: cc.t, borderColor: cc.b } : {}}
                 >
-                  <TeamRosterName teamId={g.myTid} name={myName} rosters={rosters} />
+                  {myName}
                 </div>
               )}
               <div
                 className={'sched-row' + (isPastGame(g.date, g.time) ? ' past-game' : '')}
                 style={cc ? { borderColor: cc.b } : {}}
               >
-                <div className="sched-team-line">
-                  <span className="sr-vs">
-                    vs <TeamRosterName teamId={g.oppId} name={opp} rosters={rosters} />
-                  </span>
-                </div>
                 <button
                   type="button"
                   className="sched-main"
@@ -143,6 +137,7 @@ export function SeasonSchedule({
                   <span className="sr-date">
                     {formatShort(g.date)} {formatTime12(g.time)}
                   </span>
+                  <span className="sr-vs">vs {opp}</span>
                 </button>
                 <div className="sched-side">
                   <button

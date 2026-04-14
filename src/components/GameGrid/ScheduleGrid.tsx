@@ -1,8 +1,8 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import type { Grid, Court, Team, Game, Theme, TeamRosterMap } from '../../types';
 import { formatTime12, toMinutes, isToday, nowMinutes } from '../../utils/dates';
 import { getTeamColor } from '../../utils/theme';
-import { TeamRosterName } from '../Common/TeamRosterName';
+import { RosterModal } from '../Common/RosterModal';
 
 interface ScheduleGridProps {
   grid: Grid;
@@ -33,6 +33,7 @@ export function ScheduleGrid({
   allTeamMap,
   rosters = {},
 }: ScheduleGridProps) {
+  const [activeRosterTeams, setActiveRosterTeams] = useState<Array<{ id: number; name: string }> | null>(null);
   if (!courts.length) return null;
 
   let hasWarn = false;
@@ -82,20 +83,39 @@ export function ScheduleGrid({
                     : '';
 
                   return (
-                    <div key={i} className="g-cell my-game" style={style}>
+                    <button
+                      key={i}
+                      type="button"
+                      className="g-cell my-game g-cell-actionable"
+                      style={style}
+                      onClick={() => {
+                        const teams = [
+                          myName ? { id: cell.myTid!, name: myName } : null,
+                          oppName ? { id: cell.oppId!, name: oppName } : null,
+                        ].filter((team): team is { id: number; name: string } => Boolean(team));
+                        if (teams.length > 0) setActiveRosterTeams(teams);
+                      }}
+                      aria-label={
+                        oppName && myName
+                          ? `Show rosters for ${myName} and ${oppName}`
+                          : myName
+                            ? `Show ${myName} roster`
+                            : 'Show team roster'
+                      }
+                    >
                       {myName && (
                         <>
-                          <TeamRosterName teamId={cell.myTid!} name={myName} rosters={rosters} />
+                          {myName}
                           <br />
                         </>
                       )}
                       {oppName ? (
                         <>
-                          vs <TeamRosterName teamId={cell.oppId!} name={oppName} rosters={rosters} />
+                          vs {oppName}
                           {scoreStr}
                         </>
                       ) : 'YOUR GAME'}
-                    </div>
+                    </button>
                   );
                 }
 
@@ -134,21 +154,36 @@ export function ScheduleGrid({
                 const visitName = game && allTeamMap ? allTeamMap[game.vt]?.name : '';
 
                 return (
-                  <div
+                  <button
                     key={i}
-                    className={'g-cell booked' + rowClass}
+                    type="button"
+                    className={'g-cell booked g-cell-actionable' + rowClass}
+                    onClick={() => {
+                      const teams = [
+                        homeName ? { id: game!.ht, name: homeName } : null,
+                        visitName ? { id: game!.vt, name: visitName } : null,
+                      ].filter((team): team is { id: number; name: string } => Boolean(team));
+                      if (teams.length > 0) setActiveRosterTeams(teams);
+                    }}
+                    aria-label={
+                      homeName && visitName
+                        ? `Show rosters for ${homeName} and ${visitName}`
+                        : homeName
+                          ? `Show ${homeName} roster`
+                          : 'Show team roster'
+                    }
                     title={homeName && visitName ? `${homeName} vs ${visitName}` : ''}
                   >
                     {homeName ? (
                       <span className="booked-teams">
-                        <TeamRosterName teamId={game!.ht} name={homeName} rosters={rosters} />
+                        {homeName}
                         <br />
-                        vs {visitName ? <TeamRosterName teamId={game!.vt} name={visitName} rosters={rosters} /> : 'TBD'}
+                        vs {visitName || 'TBD'}
                       </span>
                     ) : (
                       '\u2014'
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </Fragment>
@@ -161,6 +196,14 @@ export function ScheduleGrid({
           <span><span className="legend-dot green" />Net likely up</span>
           <span><span className="legend-dot yellow" />Net uncertain</span>
         </div>
+      )}
+      {activeRosterTeams && (
+        <RosterModal
+          title={activeRosterTeams.length > 1 ? 'Matchup Rosters' : activeRosterTeams[0].name}
+          teams={activeRosterTeams}
+          rosters={rosters}
+          onClose={() => setActiveRosterTeams(null)}
+        />
       )}
     </>
   );

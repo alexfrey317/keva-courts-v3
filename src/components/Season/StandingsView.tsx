@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Game, Team, TeamRosterMap } from '../../types';
 import { computeRecordBreakdown, computeStandings } from '../../utils/courts';
 import { RecordBreakdownModal } from './RecordBreakdownModal';
-import { TeamRosterName } from '../Common/TeamRosterName';
+import { RosterModal } from '../Common/RosterModal';
 
 interface StandingsViewProps {
   allGames: Game[];
@@ -14,6 +14,7 @@ interface StandingsViewProps {
 
 export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, rosters }: StandingsViewProps) {
   const [activeRecordTeamId, setActiveRecordTeamId] = useState<number | null>(null);
+  const [activeRosterTeamId, setActiveRosterTeamId] = useState<number | null>(null);
   const leagueIds = useMemo(
     () => [...new Set(myTeamObjs.map((t) => t.leagueId))],
     [myTeamObjs],
@@ -22,6 +23,7 @@ export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, roster
     () => (activeRecordTeamId ? computeRecordBreakdown(allGames, activeRecordTeamId, teamMap) : null),
     [activeRecordTeamId, allGames, teamMap],
   );
+  const activeRosterTeam = activeRosterTeamId ? teamMap[activeRosterTeamId] : null;
 
   return (
     <>
@@ -44,7 +46,16 @@ export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, roster
                 {rows.map((r, i) => (
                   <tr key={r.id} className={myTeamIds.has(r.id) ? 'me' : ''}>
                     <td className="rank">{i + 1}</td>
-                    <td><TeamRosterName teamId={r.id} name={r.name} rosters={rosters} /></td>
+                    <td>
+                      <button
+                        type="button"
+                        className="standings-team-btn"
+                        onClick={() => setActiveRosterTeamId(r.id)}
+                        aria-label={`Show ${r.name} roster`}
+                      >
+                        {r.name}
+                      </button>
+                    </td>
                     <td className="rec">
                       <button
                         type="button"
@@ -69,6 +80,14 @@ export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, roster
           breakdown={activeRecord}
           rosters={rosters}
           onClose={() => setActiveRecordTeamId(null)}
+        />
+      )}
+      {activeRosterTeam && (
+        <RosterModal
+          title={activeRosterTeam.name}
+          teams={[{ id: activeRosterTeam.id, name: activeRosterTeam.name }]}
+          rosters={rosters}
+          onClose={() => setActiveRosterTeamId(null)}
         />
       )}
     </>

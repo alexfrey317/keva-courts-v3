@@ -1072,6 +1072,26 @@ input:checked + .notif-switch::after {
   font-size: 0.72rem;
   line-height: 1.2;
 }
+.g-cell-actionable {
+  appearance: none;
+  width: 100%;
+  min-height: 100%;
+  font: inherit;
+  text-align: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.g-cell-actionable:hover,
+.g-cell-actionable:focus-visible {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  transform: translateY(-1px);
+  outline: none;
+}
+.g-cell-actionable:active {
+  opacity: 0.92;
+  transform: translateY(0);
+}
 
 /* Booked cell team names — readable but subdued */
 .booked-teams {
@@ -1613,14 +1633,10 @@ input:checked + .notif-switch::after {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  flex: 0 0 auto;
+  flex: 1;
 }
 .sched-main:active {
   opacity: 0.75;
-}
-.sched-team-line {
-  flex: 1;
-  min-width: 0;
 }
 .sched-row .sr-date {
   font-weight: 600;
@@ -1797,6 +1813,114 @@ input:checked + .notif-switch::after {
 .standings-rec-btn:active {
   opacity: 0.9;
   transform: translateY(0);
+}
+.standings-team-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+.standings-team-btn:hover,
+.standings-team-btn:focus-visible {
+  color: var(--accent-t);
+  outline: none;
+}
+
+.roster-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 111;
+  padding: 0;
+}
+.roster-popup {
+  width: 100%;
+  max-width: 540px;
+  max-height: 78vh;
+  overflow-y: auto;
+  background: var(--picker-bg);
+  border: 1px solid var(--panel-b);
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+}
+.roster-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.roster-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.roster-header h3 {
+  font-size: 1rem;
+  color: var(--heading);
+}
+.roster-close {
+  background: none;
+  border: 1px solid var(--panel-b);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.roster-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.roster-group {
+  background: var(--panel);
+  border: 1px solid var(--panel-b);
+  border-radius: 10px;
+  padding: 12px;
+}
+.roster-team-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 4px;
+}
+.roster-team-meta,
+.roster-team-sync {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.roster-team-sync {
+  margin-top: 10px;
+}
+.roster-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.roster-player {
+  color: var(--heading);
+  font-size: 0.82rem;
+}
+.roster-empty {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 8px;
 }
 
 .team-roster {
@@ -2150,6 +2274,14 @@ input:checked + .notif-switch::after {
     padding: 18px;
   }
   .record-popup {
+    max-width: 420px;
+    border-radius: 16px;
+  }
+  .roster-overlay {
+    align-items: center;
+    padding: 18px;
+  }
+  .roster-popup {
     max-width: 420px;
     border-radius: 16px;
   }

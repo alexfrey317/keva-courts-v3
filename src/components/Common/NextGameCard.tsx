@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import type { Game, Team, Theme, TeamRosterMap } from '../../types';
+import type { Game, Team, Theme } from '../../types';
 import { compareDateStr, compareDateTime, formatDateLong, formatTime12, isUpcomingGame, toDateStr } from '../../utils/dates';
 import { getTeamColor } from '../../utils/theme';
-import { TeamRosterName } from './TeamRosterName';
 
 interface NextGameCardProps {
   myTeamDateMap: Map<string, number[]>;
@@ -10,7 +9,6 @@ interface NextGameCardProps {
   myTeamIds: Set<number>;
   teamColorMap: Map<number, number>;
   teamMap?: Record<number, Team>;
-  rosters: TeamRosterMap;
   theme: Theme;
   dateStr: string;
   onGo: (dateStr: string) => void;
@@ -22,7 +20,6 @@ export function NextGameCard({
   myTeamIds,
   teamColorMap,
   teamMap,
-  rosters,
   theme,
   dateStr,
   onGo,
@@ -67,9 +64,7 @@ export function NextGameCard({
         Next
       </span>
       <div className="ng-detail">
-        <div className="ng-vs">
-          <TeamRosterName teamId={team.id} name={team.name} rosters={rosters} />
-        </div>
+        <div className="ng-vs">{team.name}</div>
         <div className="ng-meta">
           {formatDateLong(next.date)}{next.time ? ` at ${formatTime12(next.time)}` : ''}
         </div>
