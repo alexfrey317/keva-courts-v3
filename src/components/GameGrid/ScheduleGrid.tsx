@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import type { Grid, Court, Team, Game, Theme, TeamRosterMap } from '../../types';
+import type { TeamRosterStatus } from '../../hooks/useTeamRosters';
 import { formatTime12, toMinutes, isToday, nowMinutes } from '../../utils/dates';
 import { getTeamColor } from '../../utils/theme';
 import { RosterModal } from '../Common/RosterModal';
@@ -17,6 +18,7 @@ interface ScheduleGridProps {
   rawGames?: Game[];
   allTeamMap?: Record<number, Team>;
   rosters?: TeamRosterMap;
+  rosterStatus?: TeamRosterStatus;
 }
 
 export function ScheduleGrid({
@@ -32,6 +34,7 @@ export function ScheduleGrid({
   rawGames,
   allTeamMap,
   rosters = {},
+  rosterStatus = 'idle',
 }: ScheduleGridProps) {
   const [activeRosterTeams, setActiveRosterTeams] = useState<Array<{ id: number; name: string }> | null>(null);
   if (!courts.length) return null;
@@ -202,6 +205,7 @@ export function ScheduleGrid({
           title={activeRosterTeams.length > 1 ? 'Matchup Rosters' : activeRosterTeams[0].name}
           teams={activeRosterTeams}
           rosters={rosters}
+          status={rosterStatus}
           onClose={() => setActiveRosterTeams(null)}
         />
       )}

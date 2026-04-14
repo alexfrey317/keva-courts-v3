@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Game, Team, TeamRosterMap } from '../../types';
+import type { TeamRosterStatus } from '../../hooks/useTeamRosters';
 import { computeRecordBreakdown, computeStandings } from '../../utils/courts';
 import { RecordBreakdownModal } from './RecordBreakdownModal';
 import { RosterModal } from '../Common/RosterModal';
@@ -10,9 +11,10 @@ interface StandingsViewProps {
   myTeamObjs: Team[];
   myTeamIds: Set<number>;
   rosters: TeamRosterMap;
+  rosterStatus: TeamRosterStatus;
 }
 
-export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, rosters }: StandingsViewProps) {
+export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, rosters, rosterStatus }: StandingsViewProps) {
   const [activeRecordTeamId, setActiveRecordTeamId] = useState<number | null>(null);
   const [activeRosterTeamId, setActiveRosterTeamId] = useState<number | null>(null);
   const leagueIds = useMemo(
@@ -87,6 +89,7 @@ export function StandingsView({ allGames, teamMap, myTeamObjs, myTeamIds, roster
           title={activeRosterTeam.name}
           teams={[{ id: activeRosterTeam.id, name: activeRosterTeam.name }]}
           rosters={rosters}
+          status={rosterStatus}
           onClose={() => setActiveRosterTeamId(null)}
         />
       )}

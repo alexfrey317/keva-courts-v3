@@ -131,7 +131,7 @@ export function App() {
 
   // ── Notifications ──
   const notif = useNotifications(myTeams);
-  const rosters = useTeamRosters(teamData?.teams.map((team) => team.id) || []);
+  const { rosters, status: rosterStatus } = useTeamRosters(teamData?.teams.map((team) => team.id) || []);
 
   // ── Derived ──
   const myGamesToday = gameState.status === 'ok'
@@ -337,6 +337,7 @@ export function App() {
                         rawGames={gameState.rawGames}
                         allTeamMap={teamData?.teamMap}
                         rosters={rosters}
+                        rosterStatus={rosterStatus}
                       />
                       <Callouts grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart} />
                       {gameState.missing.length > 0 && !gameState.ct3bb && (
@@ -453,6 +454,7 @@ export function App() {
                             rawGames={gameState.rawGames}
                             allTeamMap={teamData?.teamMap}
                             rosters={rosters}
+                            rosterStatus={rosterStatus}
                           />
                           {showOpen && (
                             <Callouts grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart} />
@@ -508,6 +510,7 @@ export function App() {
                         myTeamObjs={myTeamObjs}
                         myTeamIds={myTeamIdSet}
                         rosters={rosters}
+                        rosterStatus={rosterStatus}
                       />
                     </Suspense>
                   ) : seasonError ? (

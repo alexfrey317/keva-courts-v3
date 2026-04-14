@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { TeamRosterMap } from '../../types';
+import type { TeamRosterStatus } from '../../hooks/useTeamRosters';
 
 interface RosterModalTeam {
   id: number;
@@ -10,10 +11,11 @@ interface RosterModalProps {
   title: string;
   teams: RosterModalTeam[];
   rosters: TeamRosterMap;
+  status: TeamRosterStatus;
   onClose: () => void;
 }
 
-export function RosterModal({ title, teams, rosters, onClose }: RosterModalProps) {
+export function RosterModal({ title, teams, rosters, status, onClose }: RosterModalProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -22,8 +24,6 @@ export function RosterModal({ title, teams, rosters, onClose }: RosterModalProps
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
-
-  const hasLoadedSnapshot = Object.keys(rosters).length > 0;
 
   return (
     <div className="roster-overlay" onClick={onClose}>
@@ -68,7 +68,9 @@ export function RosterModal({ title, teams, rosters, onClose }: RosterModalProps
                   </>
                 ) : (
                   <div className="roster-empty">
-                    {hasLoadedSnapshot ? 'Roster unavailable for this team.' : 'Roster snapshot still loading.'}
+                    {status === 'loading' || status === 'idle'
+                      ? 'Roster snapshot still loading.'
+                      : 'Roster unavailable right now.'}
                   </div>
                 )}
               </section>
