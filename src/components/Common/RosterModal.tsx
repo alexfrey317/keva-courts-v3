@@ -33,6 +33,14 @@ export function RosterModal({ title, teams, rosters, status, allGames, teamMap, 
     () => (activeRecordTeamId != null && allGames && teamMap ? computeRecordBreakdown(allGames, activeRecordTeamId, teamMap) : null),
     [activeRecordTeamId, allGames, teamMap],
   );
+  const sharedLevelName = useMemo(() => {
+    const levels = [...new Set(
+      teams
+        .map((team) => teamMap?.[team.id]?.leagueName?.trim() || '')
+        .filter(Boolean),
+    )];
+    return levels.length === 1 ? levels[0] : '';
+  }, [teamMap, teams]);
 
   return (
     <>
@@ -48,6 +56,7 @@ export function RosterModal({ title, teams, rosters, status, allGames, teamMap, 
             <div>
               <div className="roster-kicker">Team Roster</div>
               <h3>{title}</h3>
+              {sharedLevelName && <div className="roster-level">{sharedLevelName}</div>}
             </div>
             <button type="button" className="roster-close" onClick={onClose}>
               Close
@@ -59,11 +68,17 @@ export function RosterModal({ title, teams, rosters, status, allGames, teamMap, 
               const players = rosters[team.id]?.players ?? [];
               const syncedAt = rosters[team.id]?.syncedAt;
               const record = allGames ? computeRecord(allGames, team.id) : null;
+              const levelName = teamMap?.[team.id]?.leagueName;
 
               return (
                 <section key={team.id} className="roster-group">
                   <div className="roster-team-header">
-                    <div className="roster-team-name">{team.name}</div>
+                    <div>
+                      <div className="roster-team-name">{team.name}</div>
+                      {levelName && levelName !== sharedLevelName && (
+                        <div className="roster-team-level">{levelName}</div>
+                      )}
+                    </div>
                     {record && (
                       <button
                         type="button"

@@ -1872,6 +1872,14 @@ input:checked + .notif-switch::after {
   font-size: 1rem;
   color: var(--heading);
 }
+.roster-level,
+.roster-team-level {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.roster-level {
+  margin-top: 4px;
+}
 .roster-close {
   background: none;
   border: 1px solid var(--panel-b);
