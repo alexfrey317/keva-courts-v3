@@ -2,6 +2,31 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Game, DataSource } from '../types';
 import { fetchAllSeasonGames } from '../api/daysmart';
 
+const SEASON_CACHE_KEY = 'keva-season-games:v1';
+
+interface SeasonCacheEntry {
+  fetchedAt: string;
+  data: Game[];
+}
+
+function readSeasonCache(): SeasonCacheEntry | null {
+  try {
+    const raw = window.localStorage.getItem(SEASON_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SeasonCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+function writeSeasonCache(data: Game[], fetchedAt: string): void {
+  try {
+    window.localStorage.setItem(SEASON_CACHE_KEY, JSON.stringify({ data, fetchedAt }));
+  } catch {
+    // Ignore storage failures and keep the live request path working.
+  }
+}
+
 export function useSeasonData(hasTeams: boolean) {
   const [allSeasonGames, setAllSeasonGames] = useState<Game[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -12,7 +37,15 @@ export function useSeasonData(hasTeams: boolean) {
 
   const load = useCallback((force = false) => {
     if (!hasTeams || (fetched.current && !force)) return Promise.resolve();
-    setLoading(true);
+    const cached = readSeasonCache();
+    if (cached && !allSeasonGames) {
+      setAllSeasonGames(cached.data);
+      setSource('cached');
+      setFetchedAt(cached.fetchedAt);
+      setError(null);
+    }
+
+    setLoading(!cached || force);
     return fetchAllSeasonGames()
       .then((result) => {
         fetched.current = true;
@@ -20,13 +53,14 @@ export function useSeasonData(hasTeams: boolean) {
         setSource(result.source);
         setFetchedAt(result.fetchedAt);
         setError(null);
+        writeSeasonCache(result.data, result.fetchedAt);
       })
       .catch((err: Error) => {
-        setAllSeasonGames(null);
+        if (!cached) setAllSeasonGames(null);
         setError(err.message);
       })
       .finally(() => setLoading(false));
-  }, [hasTeams]);
+  }, [allSeasonGames, hasTeams]);
 
   useEffect(() => {
     if (!hasTeams) {
