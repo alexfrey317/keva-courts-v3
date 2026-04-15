@@ -1886,6 +1886,7 @@ input:checked + .notif-switch::after {
   color: var(--muted);
   border-radius: 8px;
   padding: 6px 10px;
+  min-height: 40px;
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
@@ -1902,6 +1903,7 @@ input:checked + .notif-switch::after {
   color: var(--heading);
   border-radius: 8px;
   padding: 6px 10px;
+  min-height: 40px;
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
@@ -2012,6 +2014,7 @@ input:checked + .notif-switch::after {
   color: var(--muted);
   border-radius: 8px;
   padding: 6px 10px;
+  min-height: 40px;
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
@@ -2046,6 +2049,7 @@ input:checked + .notif-switch::after {
   border: 1px solid var(--panel-b);
   border-radius: 10px;
   padding: 10px;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -2066,6 +2070,18 @@ input:checked + .notif-switch::after {
 .player-team-league {
   color: var(--muted);
   font-size: 0.76rem;
+}
+
+@media (max-width: 430px) {
+  .roster-header,
+  .player-teams-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .roster-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
 }
 
 .team-roster {
