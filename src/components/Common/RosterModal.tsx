@@ -272,7 +272,7 @@ export function RosterModal({ title, teams, rosters, status, allGames, teamMap, 
           teamName={teamMap[activeRecord.teamId]?.name || 'Team'}
           breakdown={activeRecord}
           rosters={rosters}
-          onClose={() => setActiveRecordTeamId(null)}
+          onClose={onClose}
         />
       )}
       {activePlayerName && (
@@ -283,7 +283,7 @@ export function RosterModal({ title, teams, rosters, status, allGames, teamMap, 
             setDrilldownTeam({ id: match.teamId, name: match.teamName });
             setActivePlayerName(null);
           }}
-          onClose={() => setActivePlayerName(null)}
+          onClose={onClose}
         />
       )}
     </>
