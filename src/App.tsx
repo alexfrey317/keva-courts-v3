@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import type { Mode, Theme } from './types';
 import { getDefaultDate, isVbDay as checkVbDay, isToday } from './utils/dates';
 import { computeRecord } from './utils/courts';
@@ -66,6 +66,12 @@ export function App() {
   const [showMap, setShowMap] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [backgroundReady, setBackgroundReady] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setBackgroundReady(true), 350);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const share = () => {
     navigator.clipboard.writeText(window.location.href)
@@ -95,7 +101,7 @@ export function App() {
     opDates,
     todaySessions: todayOp,
     reload: reloadOpenPlay,
-  } = useOpenPlay(dateStr);
+  } = useOpenPlay(dateStr, mode === 'openplay' || backgroundReady);
 
   // ── Season data ──
   const {
@@ -105,7 +111,7 @@ export function App() {
     source: seasonSource,
     fetchedAt: seasonFetchedAt,
     reload: reloadSeason,
-  } = useSeasonData(myTeams.length > 0);
+  } = useSeasonData(myTeams.length > 0, mode === 'season' || mode === 'myteam' || backgroundReady);
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
@@ -130,7 +136,10 @@ export function App() {
 
   // ── Notifications ──
   const notif = useNotifications(myTeams);
-  const { rosters, status: rosterStatus } = useTeamRosters(teamData?.teams.map((team) => team.id) || []);
+  const { rosters, status: rosterStatus } = useTeamRosters(
+    teamData?.teams.map((team) => team.id) || [],
+    mode === 'season' || mode === 'myteam' || backgroundReady,
+  );
 
   // ── Derived ──
   const myGamesToday = gameState.status === 'ok'

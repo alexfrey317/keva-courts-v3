@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { GameState } from '../types';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import type { ApiEvent, DataSource, GameState } from '../types';
 import { fetchGames, fetchAllDayEvents } from '../api/daysmart';
 import { parseGames, discoverCourts, buildGrid, computeVbStart, detectMissingCourts, hasCourt3Basketball } from '../utils/courts';
 import { isToday, getSlotsForDay } from '../utils/dates';
@@ -18,44 +18,77 @@ const INITIAL_STATE: GameState = {
   fetchedAt: '',
 };
 
+interface RawDayState {
+  status: 'loading' | 'ok' | 'error';
+  rawApiGames: ApiEvent[];
+  allDayEvents: ApiEvent[];
+  fetchedAt: string;
+  source: DataSource | null;
+  message?: string;
+}
+
+const INITIAL_RAW_STATE: RawDayState = {
+  status: 'loading',
+  rawApiGames: [],
+  allDayEvents: [],
+  fetchedAt: '',
+  source: null,
+};
+
 export function useGameData(dateStr: string, myTeamIds: Set<number> | null) {
-  const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
+  const [rawDayState, setRawDayState] = useState<RawDayState>(INITIAL_RAW_STATE);
   const refreshRef = useRef<ReturnType<typeof setInterval>>(0 as any);
   const slots = getSlotsForDay(dateStr);
 
   const fetchDay = useCallback(() => {
     return Promise.all([fetchGames(dateStr), fetchAllDayEvents(dateStr)])
       .then(([raw, allEvts]) => {
-        const games = parseGames(raw.data);
-        const courts = discoverCourts(games);
-        const grid = buildGrid(games, courts, slots, myTeamIds);
-        const ct3bb = hasCourt3Basketball(raw.data);
-        const missing = detectMissingCourts(courts);
-        const vbStart = computeVbStart(allEvts.data, courts);
         const stamps = [raw.fetchedAt, allEvts.fetchedAt].sort();
         const fetchedAt = stamps[stamps.length - 1] || new Date().toISOString();
         const source = raw.source === 'cached' || allEvts.source === 'cached' ? 'cached' : 'live';
 
-        setGameState({
+        setRawDayState({
           status: 'ok',
-          courts,
-          grid,
-          ct3bb,
-          missing,
-          vbStart,
-          rawGames: games,
-          updatedAt: new Date(fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-          source,
+          rawApiGames: raw.data,
+          allDayEvents: allEvts.data,
           fetchedAt,
+          source,
         });
       })
       .catch((e) =>
-        setGameState({ ...INITIAL_STATE, status: 'error', message: e.message }),
+        setRawDayState({ ...INITIAL_RAW_STATE, status: 'error', message: e.message }),
       );
-  }, [dateStr, myTeamIds, slots]);
+  }, [dateStr]);
+
+  const gameState = useMemo<GameState>(() => {
+    if (rawDayState.status === 'loading') return INITIAL_STATE;
+    if (rawDayState.status === 'error') {
+      return { ...INITIAL_STATE, status: 'error', message: rawDayState.message };
+    }
+
+    const games = parseGames(rawDayState.rawApiGames);
+    const courts = discoverCourts(games);
+    const grid = buildGrid(games, courts, slots, myTeamIds);
+    const ct3bb = hasCourt3Basketball(rawDayState.rawApiGames);
+    const missing = detectMissingCourts(courts);
+    const vbStart = computeVbStart(rawDayState.allDayEvents, courts);
+
+    return {
+      status: 'ok',
+      courts,
+      grid,
+      ct3bb,
+      missing,
+      vbStart,
+      rawGames: games,
+      updatedAt: new Date(rawDayState.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+      source: rawDayState.source,
+      fetchedAt: rawDayState.fetchedAt,
+    };
+  }, [myTeamIds, rawDayState, slots]);
 
   useEffect(() => {
-    setGameState(INITIAL_STATE);
+    setRawDayState(INITIAL_RAW_STATE);
     fetchDay();
     clearInterval(refreshRef.current);
 

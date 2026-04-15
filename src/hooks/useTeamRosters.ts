@@ -36,7 +36,7 @@ function toRosterMap(payload: WorkerRosterPayload): TeamRosterMap {
   return next;
 }
 
-export function useTeamRosters(teamIds: number[]): { rosters: TeamRosterMap; status: TeamRosterStatus } {
+export function useTeamRosters(teamIds: number[], enabled = true): { rosters: TeamRosterMap; status: TeamRosterStatus } {
   const [rosters, setRosters] = useState<TeamRosterMap>({});
   const [status, setStatus] = useState<TeamRosterStatus>('idle');
   const key = useMemo(() => [...new Set(teamIds)].sort((a, b) => a - b).join(','), [teamIds.join(',')]);
@@ -47,6 +47,7 @@ export function useTeamRosters(teamIds: number[]): { rosters: TeamRosterMap; sta
       setStatus('idle');
       return;
     }
+    if (!enabled) return;
 
     let cancelled = false;
     setStatus('loading');
@@ -82,7 +83,7 @@ export function useTeamRosters(teamIds: number[]): { rosters: TeamRosterMap; sta
     return () => {
       cancelled = true;
     };
-  }, [key]);
+  }, [enabled, key]);
 
   return { rosters, status };
 }

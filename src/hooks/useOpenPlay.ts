@@ -3,7 +3,7 @@ import type { DataSource } from '../types';
 import type { OpenPlaySession } from '../types';
 import { fetchAllOpenPlay } from '../api/daysmart';
 
-export function useOpenPlay(dateStr: string) {
+export function useOpenPlay(dateStr: string, enabled = true) {
   const [sessions, setSessions] = useState<OpenPlaySession[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +30,9 @@ export function useOpenPlay(dateStr: string) {
   };
 
   useEffect(() => {
+    if (!enabled) return;
     void load();
-  }, []);
+  }, [enabled]);
 
   const opDates = useMemo(
     () => (sessions ? new Set(sessions.map((s) => s.date)) : new Set<string>()),
