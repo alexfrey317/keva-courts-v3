@@ -27,7 +27,7 @@ function writeSeasonCache(data: Game[], fetchedAt: string): void {
   }
 }
 
-export function useSeasonData(hasTeams: boolean) {
+export function useSeasonData(hasTeams: boolean, enabled = true) {
   const [allSeasonGames, setAllSeasonGames] = useState<Game[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,9 +72,10 @@ export function useSeasonData(hasTeams: boolean) {
       setFetchedAt('');
       return;
     }
+    if (!enabled) return;
 
     void load();
-  }, [hasTeams, load]);
+  }, [enabled, hasTeams, load]);
 
   return {
     allSeasonGames,
