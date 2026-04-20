@@ -1395,6 +1395,10 @@ input:checked + .notif-switch::after {
   font-weight: 700;
   color: var(--heading);
 }
+.picker-actions {
+  display: flex;
+  gap: 6px;
+}
 .picker-done {
   background: linear-gradient(135deg, var(--my-bg1), var(--my-bg2));
   border: 1px solid var(--my-b);
@@ -1414,10 +1418,60 @@ input:checked + .notif-switch::after {
   flex-shrink: 0;
   border-bottom: 1px solid var(--panel-b);
 }
-.picker-colors {
+.picker-selected {
   padding: 12px 16px 8px;
   border-bottom: 1px solid var(--panel-b);
   flex-shrink: 0;
+}
+.picker-selected-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.picker-selected-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.picker-selected-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.picker-selected-copy {
+  min-width: 0;
+}
+.picker-selected-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.picker-selected-league {
+  font-size: 0.72rem;
+  opacity: 0.82;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.picker-remove,
+.picker-color-toggle {
+  background: var(--panel);
+  border: 1px solid var(--panel-b);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.picker-colors {
+  margin-top: 10px;
 }
 .picker-colors-title {
   font-size: 0.72rem;
@@ -1511,6 +1565,9 @@ input:checked + .notif-switch::after {
   -webkit-overflow-scrolling: touch;
   min-height: 0;
 }
+.picker-list > :first-child .picker-league-name {
+  padding-top: 8px;
+}
 .picker-league-name {
   font-size: 0.7rem;
   font-weight: 700;
@@ -1541,6 +1598,32 @@ input:checked + .notif-switch::after {
   background: var(--mode-my-bg);
   color: var(--my-t);
   font-weight: 700;
+}
+@media (max-width: 640px) {
+  .picker-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .picker-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .picker-selected-chip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .picker-remove {
+    width: 100%;
+  }
+  .picker-color-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .picker-color-reset,
+  .picker-color-toggle {
+    width: 100%;
+  }
 }
 
 /* ── Select Prompt ── */
