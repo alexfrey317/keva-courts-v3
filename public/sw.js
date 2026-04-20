@@ -1,4 +1,5 @@
-const CACHE = 'keva-v7';
+const CACHE = 'keva-v8';
+const PUSH_WORKER_URL = 'https://keva-push.alexfrey317.workers.dev';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -35,22 +36,47 @@ self.addEventListener('fetch', e => {
   );
 });
 
+function showKevaNotification(data) {
+  return self.registration.showNotification(data.title || 'KEVA Volleyball', {
+    body: data.body || '',
+    tag: data.tag || 'keva',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    vibrate: [200, 100, 200],
+    data: { url: data.url || self.registration.scope },
+  });
+}
+
+async function pullQueuedNotifications() {
+  const sub = await self.registration.pushManager.getSubscription();
+  if (!sub?.endpoint) return [];
+
+  const response = await fetch(`${PUSH_WORKER_URL}/notifications/pull`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint: sub.endpoint }),
+  });
+
+  if (!response.ok) return [];
+
+  const payload = await response.json();
+  return Array.isArray(payload.notifications) ? payload.notifications : [];
+}
+
 // Push notification handler
 self.addEventListener('push', e => {
-  if (!e.data) return;
-  try {
-    const data = e.data.json();
-    e.waitUntil(
-      self.registration.showNotification(data.title || 'KEVA Volleyball', {
-        body: data.body || '',
-        tag: data.tag || 'keva',
-        icon: 'icon-192.png',
-        badge: 'icon-192.png',
-        vibrate: [200, 100, 200],
-        data: { url: self.registration.scope },
-      })
-    );
-  } catch {}
+  e.waitUntil((async () => {
+    const queued = await pullQueuedNotifications().catch(() => []);
+    if (queued.length > 0) {
+      await Promise.all(queued.map(showKevaNotification));
+      return;
+    }
+
+    if (!e.data) return;
+    try {
+      await showKevaNotification(e.data.json());
+    } catch {}
+  })());
 });
 
 self.addEventListener('notificationclick', e => {
