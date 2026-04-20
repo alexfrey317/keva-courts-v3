@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import type { League, Team, Theme, TeamColorOverrideMap } from '../../types';
 import { TEAM_COLORS } from '../../utils/constants';
 import { getTeamColor } from '../../utils/theme';
@@ -27,6 +27,8 @@ export function TeamPicker({
   const [selected, setSelected] = useState(() => new Set(selectedIds));
   const [colorOverrides, setColorOverrides] = useState<TeamColorOverrideMap>(() => ({ ...initialOverrides }));
   const [query, setQuery] = useState('');
+  const [showColorEditor, setShowColorEditor] = useState(false);
+  const searchRef = useRef<HTMLInputElement | null>(null);
 
   const teamMap = useMemo(() => {
     const map = new Map<number, Team>();
@@ -59,6 +61,10 @@ export function TeamPicker({
     [selectedOrder, teamMap],
   );
 
+  useEffect(() => {
+    if (!selectedTeams.length) setShowColorEditor(false);
+  }, [selectedTeams.length]);
+
   const getColorIndex = (teamId: number): number => {
     if (colorOverrides[teamId] !== undefined) return colorOverrides[teamId];
     const existing = selectedColors.get(teamId);
@@ -77,11 +83,30 @@ export function TeamPicker({
     };
   };
 
+  function focusSearchAndClear() {
+    setQuery('');
+    window.requestAnimationFrame(() => searchRef.current?.focus());
+  }
+
   function toggle(id: number) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const wasSelected = next.has(id);
+      if (wasSelected) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      if (!wasSelected) focusSearchAndClear();
+      return next;
+    });
+  }
+
+  function removeTeam(id: number) {
+    setSelected((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
       return next;
     });
   }
@@ -128,7 +153,7 @@ export function TeamPicker({
       <div className="picker-modal" role="dialog" aria-modal="true" aria-label="Select your teams">
         <div className="picker-header">
           <h2>Select Your Teams</h2>
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div className="picker-actions">
             {selected.size > 0 && (
               <button
                 className="picker-done"
@@ -146,6 +171,7 @@ export function TeamPicker({
 
         <div className="picker-search-wrap">
           <input
+            ref={searchRef}
             className="picker-search"
             placeholder="Search teams..."
             aria-label="Search teams"
@@ -156,57 +182,101 @@ export function TeamPicker({
         </div>
 
         {selectedTeams.length > 0 && (
-          <div className="picker-colors">
-            <div className="picker-colors-title">Team Colors</div>
-            <div className="picker-color-list">
-              {selectedTeams.map((team) => {
-                const colorIndex = getColorIndex(team.id);
-                const activeColor = getTeamColor(colorIndex, theme);
-                const usingDefault = colorOverrides[team.id] === undefined;
+          <div className="picker-selected">
+            <div className="picker-selected-head">
+              <div className="picker-colors-title">Selected Teams</div>
+              <button
+                type="button"
+                className="picker-color-toggle"
+                onClick={() => setShowColorEditor((prev) => !prev)}
+              >
+                {showColorEditor ? 'Hide Colors' : 'Edit Colors'}
+              </button>
+            </div>
 
+            <div className="picker-selected-list">
+              {selectedTeams.map((team) => {
+                const teamColor = getTeamColor(getColorIndex(team.id), theme);
                 return (
-                  <div key={team.id} className="picker-color-card">
-                    <div className="picker-color-head">
-                      <div>
-                        <div className="picker-color-name" style={{ color: activeColor.t }}>{team.name}</div>
-                        <div className="picker-color-league">{team.leagueName}</div>
-                      </div>
-                      <button
-                        type="button"
-                        className="picker-color-reset"
-                        disabled={usingDefault}
-                        onClick={() => resetColor(team.id)}
-                      >
-                        Auto
-                      </button>
+                  <div
+                    key={team.id}
+                    className="picker-selected-chip"
+                    style={{
+                      background: teamColor.bg1,
+                      color: teamColor.t,
+                      border: `1px solid ${teamColor.b}`,
+                    }}
+                  >
+                    <div className="picker-selected-copy">
+                      <div className="picker-selected-name">{team.name}</div>
+                      <div className="picker-selected-league">{team.leagueName}</div>
                     </div>
-                    <div className="picker-swatch-row">
-                      {TEAM_COLORS.map((_, idx) => {
-                        const swatch = getTeamColor(idx, theme);
-                        const active = colorIndex === idx;
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            className={'picker-swatch' + (active ? ' active' : '')}
-                            aria-label={`Set ${team.name} color ${idx + 1}`}
-                            onClick={() => setColor(team.id, idx)}
-                            style={{
-                              background: `linear-gradient(135deg, ${swatch.bg1}, ${swatch.bg2})`,
-                              borderColor: swatch.b,
-                              color: swatch.t,
-                              boxShadow: active ? `0 0 0 2px ${swatch.b}55` : undefined,
-                            }}
-                          >
-                            {active ? '\u2713' : ''}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <button
+                      type="button"
+                      className="picker-remove"
+                      aria-label={`Remove ${team.name}`}
+                      onClick={() => removeTeam(team.id)}
+                    >
+                      Remove
+                    </button>
                   </div>
                 );
               })}
             </div>
+
+            {showColorEditor && (
+              <div className="picker-colors">
+                <div className="picker-color-list">
+                  {selectedTeams.map((team) => {
+                    const colorIndex = getColorIndex(team.id);
+                    const activeColor = getTeamColor(colorIndex, theme);
+                    const usingDefault = colorOverrides[team.id] === undefined;
+
+                    return (
+                      <div key={team.id} className="picker-color-card">
+                        <div className="picker-color-head">
+                          <div>
+                            <div className="picker-color-name" style={{ color: activeColor.t }}>{team.name}</div>
+                            <div className="picker-color-league">{team.leagueName}</div>
+                          </div>
+                          <button
+                            type="button"
+                            className="picker-color-reset"
+                            disabled={usingDefault}
+                            onClick={() => resetColor(team.id)}
+                          >
+                            Auto
+                          </button>
+                        </div>
+                        <div className="picker-swatch-row">
+                          {TEAM_COLORS.map((_, idx) => {
+                            const swatch = getTeamColor(idx, theme);
+                            const active = colorIndex === idx;
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                className={'picker-swatch' + (active ? ' active' : '')}
+                                aria-label={`Set ${team.name} color ${idx + 1}`}
+                                onClick={() => setColor(team.id, idx)}
+                                style={{
+                                  background: `linear-gradient(135deg, ${swatch.bg1}, ${swatch.bg2})`,
+                                  borderColor: swatch.b,
+                                  color: swatch.t,
+                                  boxShadow: active ? `0 0 0 2px ${swatch.b}55` : undefined,
+                                }}
+                              >
+                                {active ? '\u2713' : ''}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
