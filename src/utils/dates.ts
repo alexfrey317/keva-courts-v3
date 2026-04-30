@@ -108,6 +108,12 @@ export function getSlotsForDay(dateStr: string): string[] {
   return dow === 0 ? SUNDAY_SLOTS : WEEKDAY_SLOTS;
 }
 
+/** Add real game start times to the standard grid template. */
+export function mergeSlotsWithGameStarts(slots: string[], games: Array<{ start: string }>): string[] {
+  return [...new Set([...slots, ...games.map((g) => g.start)])]
+    .sort((a, b) => toMinutes(a) - toMinutes(b));
+}
+
 /** Is this dateStr a VB day? */
 export function isVbDay(dateStr: string): boolean {
   const dow = new Date(dateStr + 'T12:00:00').getDay();

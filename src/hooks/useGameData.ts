@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ApiEvent, DataSource, GameState } from '../types';
 import { fetchGames, fetchAllDayEvents } from '../api/daysmart';
 import { parseGames, discoverCourts, buildGrid, computeVbStart, detectMissingCourts, hasCourt3Basketball } from '../utils/courts';
-import { isToday, getSlotsForDay } from '../utils/dates';
+import { isToday, getSlotsForDay, mergeSlotsWithGameStarts } from '../utils/dates';
 import { REFRESH_INTERVAL_MS } from '../utils/constants';
 
 const INITIAL_STATE: GameState = {
@@ -67,8 +67,9 @@ export function useGameData(dateStr: string, myTeamIds: Set<number> | null) {
     }
 
     const games = parseGames(rawDayState.rawApiGames);
+    const gridSlots = mergeSlotsWithGameStarts(slots, games);
     const courts = discoverCourts(games);
-    const grid = buildGrid(games, courts, slots, myTeamIds);
+    const grid = buildGrid(games, courts, gridSlots, myTeamIds);
     const ct3bb = hasCourt3Basketball(rawDayState.rawApiGames);
     const missing = detectMissingCourts(courts);
     const vbStart = computeVbStart(rawDayState.allDayEvents, courts);
