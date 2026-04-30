@@ -79,6 +79,13 @@ export interface Grid {
   openTotal: number;
 }
 
+export type MissingCourtReason = 'other_activity' | 'unlisted';
+
+export interface MissingCourtNote {
+  court: string;
+  reason: MissingCourtReason;
+}
+
 export interface OpenCourtSummary {
   total: number;
   likely: number;
@@ -122,8 +129,7 @@ export interface GameState {
   status: 'loading' | 'ok' | 'error';
   courts: Court[];
   grid: Grid;
-  ct3bb: boolean;
-  missing: string[];
+  missing: MissingCourtNote[];
   vbStart: Record<string, number>;
   rawGames: Game[];
   updatedAt: string;

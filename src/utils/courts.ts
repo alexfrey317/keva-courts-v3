@@ -1,4 +1,4 @@
-import type { Game, Court, Grid, GridCell, GridRow, ApiEvent, TeamRecordBreakdown, RecordBreakdownEntry, OpenCourtSummary } from '../types';
+import type { Game, Court, Grid, GridCell, GridRow, ApiEvent, TeamRecordBreakdown, RecordBreakdownEntry, OpenCourtSummary, MissingCourtNote } from '../types';
 import { VB_RESOURCES } from './constants';
 import { toMinutes } from './dates';
 
@@ -268,19 +268,27 @@ export function computeStandings(
   return Object.values(teams).sort((a, b) => (b.w - b.l) - (a.w - a.l) || b.w - a.w);
 }
 
-/** Detect missing courts */
-export function detectMissingCourts(courts: Court[]): string[] {
-  const resSet = new Set(courts.map((c) => c.res));
-  const missing: string[] = [];
-  if (!resSet.has(5)) missing.push('Court 1');
-  if (!resSet.has(4)) missing.push('Court 2');
-  if (!courts.some((c) => c.res === 3)) missing.push('Court 3');
-  return missing;
-}
+/** Detect courts without volleyball games and whether anything else is booked there. */
+export function detectMissingCourts(courts: Court[], allEvents: ApiEvent[]): MissingCourtNote[] {
+  const candidates = [
+    { court: 'Court 1', res: 5 },
+    { court: 'Court 2', res: 4 },
+    { court: 'Court 3', res: 3 },
+  ];
+  const missing: MissingCourtNote[] = [];
 
-/** Check if Court 3 is basketball (area 0 on resource 3) */
-export function hasCourt3Basketball(raw: ApiEvent[]): boolean {
-  return raw.some(
-    (e) => e.attributes.resource_id === 3 && !e.attributes.resource_area_id && VB_RESOURCES.includes(e.attributes.resource_id),
-  );
+  for (const candidate of candidates) {
+    const hasVolleyball = candidate.res === 3
+      ? courts.some((c) => c.res === 3)
+      : courts.some((c) => c.res === candidate.res);
+    if (hasVolleyball) continue;
+
+    const hasOtherActivity = allEvents.some((event) => event.attributes.resource_id === candidate.res);
+    missing.push({
+      court: candidate.court,
+      reason: hasOtherActivity ? 'other_activity' : 'unlisted',
+    });
+  }
+
+  return missing;
 }

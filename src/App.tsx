@@ -32,6 +32,12 @@ const TeamPicker = lazy(() => import('./components/TeamPicker/TeamPicker').then(
 const CourtMapModal = lazy(() => import('./components/CourtMap/CourtMapModal').then(m => ({ default: m.CourtMapModal })));
 const NotificationsTab = lazy(() => import('./components/Notifications/NotificationsTab').then(m => ({ default: m.NotificationsTab })));
 
+function formatCourtList(courts: string[]): string {
+  if (courts.length <= 1) return courts[0] || '';
+  if (courts.length === 2) return `${courts[0]} and ${courts[1]}`;
+  return `${courts.slice(0, -1).join(', ')}, and ${courts[courts.length - 1]}`;
+}
+
 export function App() {
   // ── Date & navigation ──
   const [dateStr, setDateStr] = useState(getDefaultDate);
@@ -151,6 +157,12 @@ export function App() {
   const tournamentSeason = gameState.status === 'ok' && openSummary.total > 0
     ? hasTbdMatch(gameState.rawGames, teamData?.teamMap)
     : false;
+  const missingOtherCourts = gameState.status === 'ok'
+    ? gameState.missing.filter((note) => note.reason === 'other_activity').map((note) => note.court)
+    : [];
+  const missingUnlistedCourts = gameState.status === 'ok'
+    ? gameState.missing.filter((note) => note.reason === 'unlisted').map((note) => note.court)
+    : [];
 
   const renderTeamSetupPrompt = (copy: string) => {
     if (teamLoading) return <Loading />;
@@ -306,17 +318,16 @@ export function App() {
                         tournamentSeason={tournamentSeason}
                       />
                       <Callouts grid={gameState.grid} courts={gameState.courts} vbStart={gameState.vbStart} tournamentSeason={tournamentSeason} />
-                      {gameState.missing.length > 0 && !gameState.ct3bb && (
+                      {missingOtherCourts.length > 0 && (
                         <div className="bb-note">
-                          {gameState.missing.join(', ')} not scheduled for volleyball tonight
+                          {formatCourtList(missingOtherCourts)} {missingOtherCourts.length === 1 ? 'is' : 'are'} booked for other activity, so volleyball is not listed there.
                         </div>
                       )}
-                      {gameState.ct3bb && gameState.missing.filter((c) => c !== 'Court 3').length > 0 && (
+                      {missingUnlistedCourts.length > 0 && (
                         <div className="bb-note">
-                          {gameState.missing.filter((c) => c !== 'Court 3').join(', ')} not scheduled for volleyball tonight
+                          {formatCourtList(missingUnlistedCourts)} {missingUnlistedCourts.length === 1 ? 'has' : 'have'} no posted volleyball or other activity; it may be open space, but it is not confirmed.
                         </div>
                       )}
-                      {gameState.ct3bb && <div className="bb-note">Court 3 is basketball on Sundays</div>}
                     </>
                   )}
                   <div className="status">
