@@ -56,12 +56,17 @@ export function useCalendarDots(
 ) {
   const gdCache = useRef(readDotCache());
   const [gameDots, setGameDots] = useState(new Map<string, OpenCourtSummary>());
+  const gameDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const game of allSeasonGames || []) dates.add(game.date);
+    return dates;
+  }, [allSeasonGames]);
 
   // Fetch open court counts for calendar dots
   useEffect(() => {
     if (mode !== 'games') return;
 
-    const cells = calendarDays(calYear, calMonth, weekStart);
+    const cells = calendarDays(calYear, calMonth, weekStart, gameDates);
     const vbDates = [...new Set(cells.filter((c) => c.isVb && !c.isPast).map((c) => c.str))];
     const readVisibleDots = () => {
       const dots = new Map<string, OpenCourtSummary>();
@@ -104,7 +109,7 @@ export function useCalendarDots(
     }
     run();
     return () => { cancelled = true; };
-  }, [calYear, calMonth, weekStart, mode]);
+  }, [calYear, calMonth, weekStart, mode, gameDates]);
 
   const teamDots = useMemo(() => {
     const dotsByDate = new Map<string, string[]>();

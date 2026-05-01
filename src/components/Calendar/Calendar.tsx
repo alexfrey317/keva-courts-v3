@@ -11,6 +11,7 @@ interface CalendarProps {
   viewYear: number;
   viewMonth: number;
   onViewChange: (year: number, month: number) => void;
+  volleyballDates?: Set<string>;
 }
 
 export function Calendar({
@@ -22,10 +23,11 @@ export function Calendar({
   viewYear,
   viewMonth,
   onViewChange,
+  volleyballDates,
 }: CalendarProps) {
   const cells = useMemo(
-    () => calendarDays(viewYear, viewMonth, weekStart),
-    [viewYear, viewMonth, weekStart],
+    () => calendarDays(viewYear, viewMonth, weekStart, volleyballDates),
+    [viewYear, viewMonth, weekStart, volleyballDates],
   );
   const headers = useMemo(() => dowHeaders(weekStart), [weekStart]);
 

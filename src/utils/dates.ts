@@ -34,23 +34,23 @@ export function formatDateLong(dateStr: string): string {
 }
 
 /** Get the nearest VB day (today if it is one, otherwise next) */
-export function getDefaultDate(): string {
+export function getDefaultDate(extraVbDates?: Set<string>): string {
   const t = new Date();
-  if (VB_DAYS.has(t.getDay())) return toDateStr(t);
+  if (isVbDay(toDateStr(t), extraVbDates)) return toDateStr(t);
   for (let i = 1; i <= 7; i++) {
     const n = new Date(t);
     n.setDate(t.getDate() + i);
-    if (VB_DAYS.has(n.getDay())) return toDateStr(n);
+    if (isVbDay(toDateStr(n), extraVbDates)) return toDateStr(n);
   }
   return toDateStr(t);
 }
 
 /** Navigate to the next/previous VB day */
-export function nextVbDay(dateStr: string, dir: 1 | -1): string {
+export function nextVbDay(dateStr: string, dir: 1 | -1, extraVbDates?: Set<string>): string {
   const d = new Date(dateStr + 'T12:00:00');
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 370; i++) {
     d.setDate(d.getDate() + dir);
-    if (VB_DAYS.has(d.getDay())) return toDateStr(d);
+    if (isVbDay(toDateStr(d), extraVbDates)) return toDateStr(d);
   }
   return dateStr;
 }
@@ -115,13 +115,13 @@ export function mergeSlotsWithGameStarts(slots: string[], games: Array<{ start: 
 }
 
 /** Is this dateStr a VB day? */
-export function isVbDay(dateStr: string): boolean {
+export function isVbDay(dateStr: string, extraVbDates?: Set<string>): boolean {
   const dow = new Date(dateStr + 'T12:00:00').getDay();
-  return VB_DAYS.has(dow);
+  return VB_DAYS.has(dow) || Boolean(extraVbDates?.has(dateStr));
 }
 
 /** Build calendar day cells for a month view */
-export function calendarDays(year: number, month: number, weekStart: number): CalendarDay[] {
+export function calendarDays(year: number, month: number, weekStart: number, extraVbDates?: Set<string>): CalendarDay[] {
   const today = toDateStr(new Date());
 
   function makeCell(dt: Date, overflow: boolean): CalendarDay {
@@ -130,7 +130,7 @@ export function calendarDays(year: number, month: number, weekStart: number): Ca
       day: dt.getDate(),
       str,
       overflow,
-      isVb: VB_DAYS.has(dt.getDay()),
+      isVb: isVbDay(str, extraVbDates),
       isToday: str === today,
       isPast: str < today,
     };

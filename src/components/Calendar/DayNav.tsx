@@ -5,11 +5,12 @@ import { useSwipe } from '../../hooks/useSwipe';
 interface DayNavProps {
   dateStr: string;
   onDateChange: (d: string) => void;
+  volleyballDates?: Set<string>;
 }
 
-export function DayNav({ dateStr, onDateChange }: DayNavProps) {
-  const goPrev = useCallback(() => onDateChange(nextVbDay(dateStr, -1)), [dateStr, onDateChange]);
-  const goNext = useCallback(() => onDateChange(nextVbDay(dateStr, 1)), [dateStr, onDateChange]);
+export function DayNav({ dateStr, onDateChange, volleyballDates }: DayNavProps) {
+  const goPrev = useCallback(() => onDateChange(nextVbDay(dateStr, -1, volleyballDates)), [dateStr, onDateChange, volleyballDates]);
+  const goNext = useCallback(() => onDateChange(nextVbDay(dateStr, 1, volleyballDates)), [dateStr, onDateChange, volleyballDates]);
   const goToday = useCallback(() => onDateChange(toDateStr(new Date())), [onDateChange]);
   const swipeRef = useSwipe(goNext, goPrev);
 

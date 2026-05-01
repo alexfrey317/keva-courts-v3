@@ -27,7 +27,7 @@ function writeSeasonCache(data: Game[], fetchedAt: string): void {
   }
 }
 
-export function useSeasonData(hasTeams: boolean, enabled = true) {
+export function useSeasonData(enabled = true) {
   const [allSeasonGames, setAllSeasonGames] = useState<Game[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export function useSeasonData(hasTeams: boolean, enabled = true) {
   const fetched = useRef(false);
 
   const load = useCallback((force = false) => {
-    if (!hasTeams || (fetched.current && !force)) return Promise.resolve();
+    if (fetched.current && !force) return Promise.resolve();
     const cached = readSeasonCache();
     if (cached && !allSeasonGames) {
       setAllSeasonGames(cached.data);
@@ -60,22 +60,13 @@ export function useSeasonData(hasTeams: boolean, enabled = true) {
         setError(err.message);
       })
       .finally(() => setLoading(false));
-  }, [allSeasonGames, hasTeams]);
+  }, [allSeasonGames]);
 
   useEffect(() => {
-    if (!hasTeams) {
-      fetched.current = false;
-      setAllSeasonGames(null);
-      setLoading(false);
-      setError(null);
-      setSource(null);
-      setFetchedAt('');
-      return;
-    }
     if (!enabled) return;
 
     void load();
-  }, [enabled, hasTeams, load]);
+  }, [enabled, load]);
 
   return {
     allSeasonGames,

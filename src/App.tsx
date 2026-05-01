@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import type { Mode, Theme } from './types';
 import { getDefaultDate, isVbDay as checkVbDay, isToday } from './utils/dates';
 import { computeRecord, countOpenSlots, hasTbdMatch } from './utils/courts';
@@ -93,7 +93,6 @@ export function App() {
   } = useTeams();
 
   // ── Game data ──
-  const isVbDay = checkVbDay(dateStr);
   const myIds = mode === 'myteam' && myTeamIdSet.size > 0 ? myTeamIdSet : null;
   const { gameState, refetch } = useGameData(dateStr, myIds);
 
@@ -117,7 +116,15 @@ export function App() {
     source: seasonSource,
     fetchedAt: seasonFetchedAt,
     reload: reloadSeason,
-  } = useSeasonData(myTeams.length > 0, mode === 'season' || mode === 'myteam' || backgroundReady);
+  } = useSeasonData(mode === 'season' || mode === 'myteam' || backgroundReady);
+
+  const scheduledGameDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const game of allSeasonGames || []) dates.add(game.date);
+    return dates;
+  }, [allSeasonGames]);
+  const isVbDay = checkVbDay(dateStr, scheduledGameDates)
+    || (gameState.status === 'ok' && gameState.rawGames.length > 0);
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
@@ -128,14 +135,14 @@ export function App() {
       const jobs: Promise<unknown>[] = [reloadTeams()];
       if (mode === 'games' || mode === 'myteam') jobs.push(refetch());
       if (mode === 'openplay') jobs.push(reloadOpenPlay());
-      if (mode === 'season' && myTeams.length > 0) jobs.push(reloadSeason());
+      if (mode === 'games' || mode === 'myteam' || mode === 'season') jobs.push(reloadSeason());
       await Promise.allSettled(jobs);
     } finally {
       const minVisibleMs = 650;
       const remainingMs = Math.max(0, minVisibleMs - (Date.now() - startedAt));
       window.setTimeout(() => setRefreshing(false), remainingMs);
     }
-  }, [mode, myTeams.length, refetch, refreshing, reloadOpenPlay, reloadSeason, reloadTeams]);
+  }, [mode, refetch, refreshing, reloadOpenPlay, reloadSeason, reloadTeams]);
 
   // ── Calendar dots ──
   const getDots = useCalendarDots(calYear, calMonth, weekStart, mode, opDates, teamColorMap, theme, allSeasonGames, myTeamIdSet, teamData?.teamMap);
@@ -255,9 +262,10 @@ export function App() {
               viewYear={calYear}
               viewMonth={calMonth}
               onViewChange={handleViewChange}
+              volleyballDates={scheduledGameDates}
             />
           </div>
-          <DayNav dateStr={dateStr} onDateChange={setDateStr} />
+          <DayNav dateStr={dateStr} onDateChange={setDateStr} volleyballDates={scheduledGameDates} />
 
           <div className="wide-sidebar-extra">
             {(mode === 'games' || (mode === 'myteam' && showOpen)) && gameState.status === 'ok' && (
@@ -292,7 +300,7 @@ export function App() {
                   canPickTeams={!teamLoading && !!teamData}
                   onPickTeams={() => setShowPicker(true)}
                   onShowTonight={() => {
-                    setDateStr(getDefaultDate());
+                    setDateStr(getDefaultDate(scheduledGameDates));
                     setMode('games');
                   }}
                   onOpenAlerts={() => setMode('notifications')}
