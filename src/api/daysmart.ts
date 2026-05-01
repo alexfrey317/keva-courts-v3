@@ -51,12 +51,17 @@ function combineSourceMeta(results: Array<{ source: DataSource; fetchedAt: strin
   };
 }
 
-let activeAdultLeagueIdsPromise: Promise<SourceResult<Set<number>>> | null = null;
+interface ActiveAdultDirectory {
+  leagueIds: Set<number>;
+  teamIds: Set<number>;
+}
 
-async function fetchActiveAdultLeagueIds(): Promise<SourceResult<Set<number>>> {
-  if (activeAdultLeagueIdsPromise) return activeAdultLeagueIdsPromise;
+let activeAdultDirectoryPromise: Promise<SourceResult<ActiveAdultDirectory>> | null = null;
 
-  activeAdultLeagueIdsPromise = (async () => {
+async function fetchActiveAdultDirectory(): Promise<SourceResult<ActiveAdultDirectory>> {
+  if (activeAdultDirectoryPromise) return activeAdultDirectoryPromise;
+
+  activeAdultDirectoryPromise = (async () => {
     const seasonBatch = await apiFetch('seasons', { sort: '-id', 'page[size]': '50' });
     const today = toDateStr(new Date());
     const sources: Array<{ source: DataSource; fetchedAt: string }> = [seasonBatch];
@@ -84,7 +89,7 @@ async function fetchActiveAdultLeagueIds(): Promise<SourceResult<Set<number>>> {
     }
 
     if (!season) {
-      return withSource(new Set<number>(), seasonBatch.source, seasonBatch.fetchedAt);
+      return withSource({ leagueIds: new Set<number>(), teamIds: new Set<number>() }, seasonBatch.source, seasonBatch.fetchedAt);
     }
 
     const leagueBatch = await apiFetch('leagues', {
@@ -94,16 +99,38 @@ async function fetchActiveAdultLeagueIds(): Promise<SourceResult<Set<number>>> {
     sources.push(leagueBatch);
 
     const skip = /waitlist|sub list|canceled/i;
-    const ids = new Set(
-      (leagueBatch.data.data || [])
-        .filter((league) => !skip.test((league.attributes as any).name))
-        .map((league) => Number(league.id)),
+    const leagues = (leagueBatch.data.data || [])
+      .filter((league) => !skip.test((league.attributes as any).name));
+    const leagueIds = new Set(leagues.map((league) => Number(league.id)));
+    const teamIds = new Set<number>();
+
+    const teamBatches = await Promise.all(
+      leagues.map((league) =>
+        apiFetch('teams', {
+          'filter[league_id]': league.id,
+          'page[size]': '100',
+        }),
+      ),
     );
+    for (const batch of teamBatches) {
+      sources.push(batch);
+      for (const team of batch.data.data || []) teamIds.add(Number(team.id));
+    }
+
     const meta = combineSourceMeta(sources);
-    return withSource(ids, meta.source, meta.fetchedAt);
+    return withSource({ leagueIds, teamIds }, meta.source, meta.fetchedAt);
   })();
 
-  return activeAdultLeagueIdsPromise;
+  return activeAdultDirectoryPromise;
+}
+
+function isActiveAdultGame(event: ApiEvent, directory: ActiveAdultDirectory): boolean {
+  const attrs = event.attributes;
+  return (
+    directory.leagueIds.has(Number(attrs.league_id)) ||
+    directory.teamIds.has(Number(attrs.hteam_id)) ||
+    directory.teamIds.has(Number(attrs.vteam_id))
+  );
 }
 
 async function apiFetch(endpoint: string, params: Record<string, string> = {}): Promise<SourceResult<ApiResponse>> {
@@ -133,18 +160,18 @@ async function apiFetch(endpoint: string, params: Record<string, string> = {}): 
 }
 
 export async function fetchGames(date: string): Promise<SourceResult<ApiEvent[]>> {
-  const [res, activeLeagues] = await Promise.all([
+  const [res, activeDirectory] = await Promise.all([
     apiFetch('events', {
       'filter[start_date]': date,
       'filter[event_type_id]': 'g',
       sort: 'start',
       'page[size]': '500',
     }),
-    fetchActiveAdultLeagueIds(),
+    fetchActiveAdultDirectory(),
   ]);
-  const meta = combineSourceMeta([res, activeLeagues]);
+  const meta = combineSourceMeta([res, activeDirectory]);
   const games = (res.data.data || []).filter((event) =>
-    activeLeagues.data.has(Number(event.attributes.league_id)),
+    isActiveAdultGame(event, activeDirectory.data),
   );
   return withSource(games, meta.source, meta.fetchedAt);
 }
@@ -289,16 +316,16 @@ export async function fetchTeamData(): Promise<SourceResult<TeamData>> {
 }
 
 export async function fetchAllSeasonGames(): Promise<SourceResult<Game[]>> {
-  const [first, activeLeagues] = await Promise.all([
+  const [first, activeDirectory] = await Promise.all([
     apiFetch('events', {
       'filter[event_type_id]': 'g',
       sort: 'start',
       'page[size]': '2000',
       'page[number]': '1',
     }),
-    fetchActiveAdultLeagueIds(),
+    fetchActiveAdultDirectory(),
   ]);
-  const sources: Array<{ source: DataSource; fetchedAt: string }> = [first, activeLeagues];
+  const sources: Array<{ source: DataSource; fetchedAt: string }> = [first, activeDirectory];
   const all = [...(first.data.data || [])];
   const totalPages = first.data.meta?.page?.['last-page'] || 1;
 
@@ -320,7 +347,7 @@ export async function fetchAllSeasonGames(): Promise<SourceResult<Game[]>> {
   }
 
   const meta = combineSourceMeta(sources);
-  const adultGames = all.filter((event) => activeLeagues.data.has(Number(event.attributes.league_id)));
+  const adultGames = all.filter((event) => isActiveAdultGame(event, activeDirectory.data));
   return withSource(parseGames(adultGames), meta.source, meta.fetchedAt);
 }
 
