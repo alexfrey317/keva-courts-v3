@@ -332,7 +332,6 @@ export function App() {
 
   return (
     <>
-      <a className="skip-link" href="#main">Skip to main content</a>
       <header>
         <Header
           theme={theme}

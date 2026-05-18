@@ -214,8 +214,8 @@ export function TeamPicker({
           />
         </div>
 
-        {selectedTeams.length > 0 && (!searching || showColorEditor) && (
-          <div className={'picker-selected' + (showColorEditor ? ' color-mode' : '') + (showColorEditor && searching ? ' search-mode' : '')}>
+        {selectedTeams.length > 0 && !searching && (
+          <div className={'picker-selected' + (showColorEditor ? ' color-mode' : '')}>
             <div className="picker-selected-head">
               <div className="picker-colors-title">Selected Teams</div>
               <button

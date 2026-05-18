@@ -230,28 +230,6 @@ body {
   margin: 0 auto;
 }
 
-.skip-link {
-  position: fixed;
-  top: max(10px, env(safe-area-inset-top));
-  left: 50%;
-  transform: translate(-50%, -160%);
-  z-index: 300;
-  background: var(--accent-bg);
-  border: 2px solid var(--accent);
-  border-radius: 999px;
-  color: var(--accent-t);
-  font-size: 0.84rem;
-  font-weight: 800;
-  padding: 9px 14px;
-  text-decoration: none;
-  transition: transform 0.15s ease;
-}
-.skip-link:focus-visible {
-  transform: translate(-50%, 0);
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
@@ -1554,6 +1532,7 @@ input:checked + .notif-switch::after {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 .picker-header {
   display: flex;
@@ -1597,6 +1576,8 @@ input:checked + .notif-switch::after {
   flex: 0 1 auto;
   max-height: min(52vh, 440px);
   min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1604,10 +1585,6 @@ input:checked + .notif-switch::after {
   flex: 1 1 auto;
   max-height: none;
   padding-bottom: 24px;
-}
-.picker-selected.color-mode.search-mode {
-  flex: 0 1 45%;
-  max-height: min(42vh, 360px);
 }
 .picker-selected-head {
   display: flex;
@@ -1620,6 +1597,7 @@ input:checked + .notif-switch::after {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 .picker-selected-chip {
   display: flex;
@@ -1627,6 +1605,8 @@ input:checked + .notif-switch::after {
   gap: 10px;
   border-radius: 12px;
   padding: 10px 12px;
+  min-width: 0;
+  overflow: hidden;
 }
 .picker-selected-main {
   display: flex;
@@ -1634,21 +1614,24 @@ input:checked + .notif-switch::after {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
+  min-width: 0;
 }
 .picker-selected-copy {
   min-width: 0;
+  overflow: hidden;
 }
 .picker-selected-name {
   font-size: 0.88rem;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 .picker-selected-league {
   font-size: 0.72rem;
   opacity: 0.82;
   margin-top: 2px;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .picker-remove,
 .picker-color-toggle {
@@ -1668,6 +1651,8 @@ input:checked + .notif-switch::after {
   border-radius: 10px;
   padding: 9px;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 .picker-selected-color-head {
   display: flex;
@@ -1701,6 +1686,7 @@ input:checked + .notif-switch::after {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 .picker-swatch {
   width: 32px;
@@ -1735,10 +1721,12 @@ input:checked + .notif-switch::after {
 }
 .picker-list {
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   padding: 8px 16px 24px;
   -webkit-overflow-scrolling: touch;
   min-height: 0;
+  min-width: 0;
 }
 .picker-list > :first-child .picker-league-name {
   padding-top: 8px;
@@ -1784,7 +1772,7 @@ input:checked + .notif-switch::after {
     font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 0.4px;
-    margin: 0 2px 6px;
+    margin: 0 10px 6px 2px;
     text-align: right;
     text-transform: uppercase;
   }
@@ -1802,13 +1790,10 @@ input:checked + .notif-switch::after {
     flex-wrap: wrap;
   }
   .picker-selected {
-    max-height: 58vh;
+    max-height: min(54dvh, 420px);
   }
   .picker-selected.color-mode {
     max-height: none;
-  }
-  .picker-selected.color-mode.search-mode {
-    max-height: 42vh;
   }
   .picker-selected-main,
   .picker-selected-color-head {
