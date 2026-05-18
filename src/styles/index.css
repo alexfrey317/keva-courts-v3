@@ -1772,9 +1772,10 @@ input:checked + .notif-switch::after {
     font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 0.4px;
-    margin: 0 10px 6px 2px;
-    text-align: right;
+    margin: 0 auto 6px;
+    text-align: center;
     text-transform: uppercase;
+    width: 100%;
   }
   .picker-modal {
     height: 92vh;
